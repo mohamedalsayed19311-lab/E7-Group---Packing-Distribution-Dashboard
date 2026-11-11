@@ -64,22 +64,27 @@
         .glass-card { background: rgba(28, 37, 65, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pb-20">
+<body class="max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pb-24">
 
     <!-- Mobile Header -->
-    <header class="glass-card rounded-2xl p-4 mb-4 flex items-center justify-between">
+    <header class="glass-card rounded-2xl p-4 mb-4 flex items-center justify-between shadow-lg">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-white shadow">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-white shadow-md">
                 E7
             </div>
             <div>
-                <h1 class="font-bold text-sm text-white">E7 Mobile Operations</h1>
-                <p class="text-[10px] text-cyan-400">Term 2 Field Terminal</p>
+                <h1 class="font-bold text-sm text-white">E7 Operations Terminal</h1>
+                <p class="text-[10px] text-cyan-400">Assistant Supervisor Access</p>
             </div>
         </div>
-        <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] text-emerald-300 font-semibold">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Cloud Live</span>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleFullScreen()" title="Full Screen" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white transition-all">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+            </button>
+            <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] text-emerald-300 font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Live</span>
+            </div>
         </div>
     </header>
 
@@ -90,13 +95,13 @@
         <div class="grid grid-cols-2 gap-2">
             <div class="glass-card rounded-xl p-3 flex items-center justify-between">
                 <div>
-                    <div class="text-[9px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-400">Zebra ZT510</div>
                     <div class="text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         <span>4 / 4 Online</span>
                     </div>
                 </div>
-                <i data-lucide="printer" class="w-5 h-5 text-slate-400"></i>
+                <i data-lucide="printer" class="w-5 h-5 text-cyan-400"></i>
             </div>
 
             <div class="glass-card rounded-xl p-3 flex items-center justify-between">
@@ -107,7 +112,7 @@
                         <span>12 Active</span>
                     </div>
                 </div>
-                <i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i>
+                <i data-lucide="qr-code" class="w-5 h-5 text-cyan-400"></i>
             </div>
         </div>
 
@@ -115,7 +120,7 @@
         <div class="glass-card rounded-2xl p-4 space-y-2">
             <div class="flex items-center justify-between text-xs font-bold text-slate-300">
                 <span class="flex items-center gap-1.5"><i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i> Live Production Rate</span>
-                <span id="activeShiftBadge" class="text-amber-400">Morning Shift</span>
+                <span class="text-amber-400 font-mono">Shift Active</span>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-1">
                 <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-center">
@@ -136,12 +141,13 @@
                     <i data-lucide="zap" class="w-4 h-4"></i>
                     <span>Quick Production Logger</span>
                 </span>
+                <span class="text-[10px] text-slate-400 font-mono">Auto-Sync ON</span>
             </div>
 
             <div class="space-y-2">
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Select Grade:</label>
-                    <select id="mobileGradeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"></select>
+                    <select id="mobileGradeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-semibold"></select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -155,7 +161,7 @@
                     </div>
                 </div>
 
-                <button onclick="submitMobileEntry()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition-all mt-2">
+                <button onclick="submitMobileEntry()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition-all mt-2">
                     <i data-lucide="check-circle" class="w-4 h-4"></i>
                     <span>Log & Sync to Cloud</span>
                 </button>
@@ -164,10 +170,13 @@
 
         <!-- Live Progress Summary Card -->
         <div class="glass-card rounded-2xl p-4 space-y-3">
-            <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
-                <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
-                <span>Grades Quick Overview</span>
-            </h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                    <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+                    <span>Grades Quick Overview</span>
+                </h3>
+                <span id="totalProgressPct" class="text-xs font-mono font-bold text-cyan-400">0%</span>
+            </div>
             <div id="mobileGradesList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 text-xs font-mono">
                 <!-- Dynamic Grades List -->
             </div>
@@ -175,19 +184,19 @@
 
     </main>
 
-    <!-- Mobile Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass-card border-t border-slate-800 p-2 flex justify-around items-center text-[10px]">
-        <button class="flex flex-col items-center text-cyan-400 gap-1 p-2">
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass-card border-t border-slate-800 p-2.5 flex justify-around items-center text-[10px] backdrop-blur-xl z-50">
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center text-cyan-400 gap-1 p-1">
             <i data-lucide="home" class="w-5 h-5"></i>
             <span>Terminal</span>
         </button>
-        <button onclick="alert('Printers: Zebra ZT510 Online (4 Units)\nScanners: Honeywell Active (12 Units)')" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-2">
-            <i data-lucide="printer" class="w-5 h-5"></i>
-            <span>Devices</span>
+        <button onclick="shareShiftReport()" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-1">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+            <span>Share</span>
         </button>
-        <button onclick="alert('E7 Logistics Term 2 Operations - Mobile Sync Active')" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-2">
-            <i data-lucide="info" class="w-5 h-5"></i>
-            <span>Status</span>
+        <button onclick="location.reload()" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-1">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            <span>Refresh</span>
         </button>
     </nav>
 
@@ -261,11 +270,13 @@
             const container = document.getElementById('mobileGradesList');
             container.innerHTML = '';
             let totalPacked = 0;
+            let totalTarget = 0;
 
             packingData.forEach(row => {
                 const target = row.dne + row.ad + row.ajyal1 + row.ajyal2;
                 const packed = row.morning + row.evening;
                 totalPacked += packed;
+                totalTarget += target;
                 const pct = target > 0 ? ((packed / target) * 100).toFixed(1) : '0.0';
 
                 const div = document.createElement('div');
@@ -283,12 +294,39 @@
                 container.appendChild(div);
             });
 
+            const overallPct = totalTarget > 0 ? ((totalPacked / totalTarget) * 100).toFixed(1) : '0.0';
+            document.getElementById('totalProgressPct').textContent = overallPct + '% Overall';
+
             const workforce = 45;
             const rateHour = Math.round(totalPacked / (workforce * 12)) || 0;
             const rateMinute = (totalPacked / (workforce * 12 * 60)).toFixed(1);
 
             document.getElementById('mobilePcsHour').textContent = rateHour + ' Pcs/W/Hr';
             document.getElementById('mobilePcsMinute').textContent = rateMinute + ' Pcs/Min';
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function shareShiftReport() {
+            let totalPacked = 0;
+            packingData.forEach(r => totalPacked += (r.morning + r.evening));
+            const text = `📦 E7 Logistics Shift Report\nTotal Packed: ${totalPacked.toLocaleString()} Pcs\nStatus: Live Synced via Firebase`;
+            if (navigator.share) {
+                navigator.share({ title: 'E7 Report', text: text }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(text);
+                alert('Report copied to clipboard!');
+            }
         }
     </script>
 </body>
