@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>E7 Group - لوحة التحكم السحابية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b132b] text-slate-100 p-4 font-sans min-h-screen">
+    <header class="mb-6 p-4 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+        <h1 class="text-lg font-bold text-cyan-400">لوحة تحكم التعبئة والتوزيع (E7 Group)</h1>
+        <span id="syncStatus" class="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">متصل بالسحاب 🟢</span>
+    </header>
+
+    <main class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <p class="text-xs text-slate-400">المستهدف الكلي</p>
+            <h3 id="targetVal" class="text-2xl font-bold">269,818</h3>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <p class="text-xs text-slate-400">المعبأ حالياً</p>
+            <h3 id="packedVal" class="text-2xl font-bold text-emerald-400">0</h3>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <p class="text-xs text-slate-400">المتبقي للتعبئة</p>
+            <h3 id="remVal" class="text-2xl font-bold text-amber-400">0</h3>
+        </div>
+    </main>
+
+    <section class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-6">
+        <div class="flex gap-2 mb-4">
+            <select id="gradeSelect" class="bg-slate-950 p-2 rounded border border-slate-700 text-xs text-white"></select>
+            <input id="qtyInput" type="number" placeholder="الكمية..." class="bg-slate-950 p-2 rounded border border-slate-700 text-xs text-emerald-400 w-24">
+            <button onclick="logData()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded text-xs font-bold text-white transition-all">تسجيل</button>
+        </div>
+        <table class="w-full text-xs text-right">
+            <thead><tr class="border-b border-slate-800 text-slate-400"><th class="p-2">الصف</th><th class="p-2">المستهدف</th><th class="p-2">المعبأ</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </section>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY", // ضع مفتاح مشروعك الحقيقي
+            authDomain: "e7-group---packing-dashboard.firebaseapp.com",
+            databaseURL: "https://e7-group---packing-dashboard-default-rtdb.firebaseio.com",
+            projectId: "e7-group---packing-dashboard"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'packingState/main');
+
+        window.packingData = JSON.parse(localStorage.getItem('e7_data')) || [
+            { id: "G01", name: "G01", target: 21691, packed: 3302 },
+            { id: "G02", name: "G02", target: 18394, packed: 0 },
+            { id: "G03", name: "G03", target: 18674, packed: 0 }
+        ];
+
+        window.logData = async () => {
+            const id = document.getElementById('gradeSelect').value;
+            const qty = parseInt(document.getElementById('qtyInput').value) || 0;
+            const row = window.packingData.find(r => r.id === id);
+            if (row && qty > 0) {
+                row.packed += qty;
+                updateUI();
+                try {
+                    await set(dbRef, window.packingData);
+                } catch {
+                    localStorage.setItem('e7_data', JSON.stringify(window.packingData));
+                }
+            }
+        };
+
+        onValue(dbRef, (snap) => {
+            if (snap.exists()) {
+                window.packingData = snap.val();
+                localStorage.setItem('e7_data', JSON.stringify(window.packingData));
+                updateUI();
+            }
+        });
+
+        function updateUI() {
+            let totalTarget = 0, totalPacked = 0;
+            const tbody = document.getElementById('tableBody');
+            const select = document.getElementById('gradeSelect');
+            tbody.innerHTML = ''; select.innerHTML = '';
+
+            window.packingData.forEach(row => {
+                totalTarget += row.target;
+                totalPacked += row.packed;
+                tbody.innerHTML += `<tr class="border-b border-slate-800/40"><td class="p-2">${row.name}</td><td class="p-2">${row.target.toLocaleString()}</td><td class="p-2 text-emerald-400 font-bold">${row.packed.toLocaleString()}</td></tr>`;
+                select.innerHTML += `<option value="${row.id}">${row.name}</option>`;
+            });
+
+            document.getElementById('targetVal').textContent = totalTarget.toLocaleString();
+            document.getElementById('packedVal').textContent = totalPacked.toLocaleString();
+            document.getElementById('remVal').textContent = (totalTarget - totalPacked).toLocaleString();
+        }
+        updateUI();
+    </script>
+</body>
+</html>
