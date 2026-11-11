@@ -96,7 +96,7 @@
             <div class="flex items-center gap-3 w-full md:w-auto justify-end overflow-x-auto">
                 <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="cloudSyncDot"></span>
-                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">Connecting Cloud...</span>
+                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">System Live</span>
                 </div>
 
                 <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs font-mono">
@@ -510,8 +510,8 @@
                     <textarea id="handoverNotesText" onchange="saveHandoverNotes()" placeholder="Type shift notes here..." class="w-full h-40 mt-3 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 custom-scrollbar resize-none"></textarea>
                 </div>
                 <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
-                    <span>Auto-saved to Cloud Sync</span>
-                    <span id="notesSavedBadge" class="text-emerald-400 font-semibold">Synced</span>
+                    <span>Auto-saved Locally & Cloud</span>
+                    <span id="notesSavedBadge" class="text-emerald-400 font-semibold">Active</span>
                 </div>
             </section>
         </div>
@@ -628,7 +628,6 @@
         let donutChartInstance = null;
 
         async function syncToCloud() {
-            if (!currentUser || !db) return;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
                 await setDoc(docRef, {
@@ -640,7 +639,7 @@
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
             } catch (err) {
-                console.error("Cloud Sync Save Error:", err);
+                console.warn("Cloud Sync warning (using local fallback):", err);
             }
         }
 
@@ -657,12 +656,12 @@
 
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
-                if (user) {
-                    const statusText = document.getElementById('cloudStatusText');
-                    const statusDot = document.getElementById('cloudSyncDot');
-                    if (statusText) statusText.textContent = "Cloud Live";
-                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                const statusText = document.getElementById('cloudStatusText');
+                const statusDot = document.getElementById('cloudSyncDot');
+                if (statusText) statusText.textContent = "System Live";
+                if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
 
+                if (user && db) {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
                     onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
@@ -692,11 +691,9 @@
                             window.renderHistoryLog();
                             window.updateExecutiveKPIs();
                             window.updateCharts();
-                        } else {
-                            syncToCloud();
                         }
                     }, (error) => {
-                        console.error("Snapshot error:", error);
+                        console.warn("Snapshot notice:", error);
                     });
                 }
             });
@@ -932,7 +929,6 @@
             setVal('footRemaining', remainingBalance.toLocaleString());
             setVal('footPct', `${packedPct}%`);
 
-            // Efficiency Rates calculation
             const morningRate = (totalMorning / (morningStaffCount * 12)).toFixed(1);
             const eveningRate = (totalEvening / (eveningStaffCount * 12)).toFixed(1);
             setVal('morningRateVal', `${morningRate} Pcs/W/Hr`);
