@@ -52,7 +52,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Global save function to sync data with Firebase
         window.saveCloudData = function(path, value) {
             const dbRef = ref(db, 'dashboard/' + path);
             set(dbRef, value).then(() => {
@@ -62,7 +61,6 @@
             });
         };
 
-        // Listen for live cloud updates
         const dashboardRef = ref(db, 'dashboard/');
         onValue(dashboardRef, (snapshot) => {
             const data = snapshot.val();
@@ -79,8 +77,7 @@
             const dot = document.getElementById('cloudSyncDot');
             const txt = document.getElementById('cloudStatusText');
             dot.className = "w-2 h-2 rounded-full bg-rose-500";
-            txt.textContent = "Cloud Connection Error";
-            console.error("Firebase connection error:", error);
+            txt.textContent = "Cloud Error";
         });
     </script>
     <style>
@@ -106,18 +103,18 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="font-bold text-lg lg:text-xl tracking-tight text-white">
-                                E7 Group - Packing & Logistics Dashboard
+                                E7 Group - Packing & Distribution Dashboard
                             </h1>
                             <span class="px-2 py-0.5 text-xs font-bold bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30">
                                 Term 2 (2026/2027)
                             </span>
                         </div>
-                        <p class="text-xs text-slate-400">Warehouse Operations, Textbook Distribution & Exam Security Control</p>
+                        <p class="text-xs text-slate-400">Warehouse Operations & Logistics Real-Time Control System</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Live Clock & Cloud Status -->
+            <!-- Live Clock & Shift Status Bar -->
             <div class="flex items-center gap-3 w-full md:w-auto justify-end overflow-x-auto">
                 <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="cloudSyncDot"></span>
@@ -125,7 +122,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs font-mono">
-                    <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+                    <i data-lucide="clock" class="w-4 h-4 text-cyan-400 animate-pulse"></i>
                     <span id="liveTimeText" class="text-slate-200 font-semibold">--:--:--</span>
                     <span class="text-slate-500">|</span>
                     <span id="liveDateText" class="text-slate-400">--/--/----</span>
@@ -177,7 +174,7 @@
                     </div>
                 </div>
 
-                <!-- Shift Controller & Workforce Management -->
+                <!-- Shift Controller & Separate Workforce Management -->
                 <div class="lg:col-span-7 space-y-4">
                     <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
                         <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
@@ -204,16 +201,68 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <span class="text-[10px] text-amber-400 block">Morning Staff</span>
-                                    <input type="number" id="morningStaffInput" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold">
+                                    <input type="number" id="morningStaffInput" onchange="updateShiftWorkforce()" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold">
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-indigo-400 block">Evening Staff</span>
-                                    <input type="number" id="eveningStaffInput" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold">
+                                    <input type="number" id="eveningStaffInput" onchange="updateShiftWorkforce()" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold">
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                            <span class="text-slate-300 font-semibold">Morning Shift Total:</span>
+                            <div class="font-mono font-bold text-amber-400 text-sm" id="morningShiftTotalDisplay">0</div>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 flex items-center justify-between">
+                            <span class="text-slate-300 font-semibold">Evening Shift Total:</span>
+                            <div class="font-mono font-bold text-indigo-400 text-sm" id="eveningShiftTotalDisplay">0</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Operational Status Bar -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Online (4 / 4 Units)</span>
+                    </div>
+                </div>
+                <i data-lucide="printer" class="w-6 h-6 text-slate-500"></i>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Honeywell Scanners</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Active (12 Scanners)</span>
+                    </div>
+                </div>
+                <i data-lucide="qr-code" class="w-6 h-6 text-slate-500"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Morning Efficiency</div>
+                    <div class="text-sm font-bold text-amber-400 font-mono mt-0.5" id="morningRateVal">0 Pcs/W/Hr</div>
+                </div>
+                <i data-lucide="zap" class="w-6 h-6 text-amber-400"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Evening Efficiency</div>
+                    <div class="text-sm font-bold text-indigo-400 font-mono mt-0.5" id="eveningRateVal">0 Pcs/W/Hr</div>
+                </div>
+                <i data-lucide="activity" class="w-6 h-6 text-indigo-400"></i>
             </div>
         </section>
 
@@ -224,7 +273,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider">Total Targeted Students</span>
                     <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
                 </div>
-                <div class="text-3xl font-black font-mono text-white mb-1" id="kpiTotalTarget">269,818</div>
+                <div class="text-3xl font-black font-mono text-white mb-1" id="kpiTotalTargetVal">269,818</div>
                 <div class="text-xs text-slate-400">All Grades (G01 - G12)</div>
             </div>
 
@@ -233,8 +282,11 @@
                     <span class="text-xs font-bold uppercase tracking-wider">Packed To Date</span>
                     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
                 </div>
-                <div class="text-3xl font-black font-mono text-emerald-400 mb-1" id="kpiPackedVal">3,302</div>
-                <div class="text-xs text-emerald-500 font-mono" id="kpiPackedPct">Completion Rate: 1.22%</div>
+                <div class="flex items-baseline gap-2 mb-1">
+                    <span class="text-3xl font-black font-mono text-emerald-400" id="kpiPackedVal">3,302</span>
+                    <span class="text-xs font-bold text-emerald-500 font-mono" id="kpiPackedPct">(1.22%)</span>
+                </div>
+                <div class="text-xs text-slate-400" id="activeShiftAddedBadge">Active Shift: +0</div>
             </div>
 
             <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
@@ -243,7 +295,7 @@
                     <i data-lucide="package-search" class="w-5 h-5 text-amber-400"></i>
                 </div>
                 <div class="text-3xl font-black font-mono text-amber-400 mb-1" id="kpiRemainingVal">266,516</div>
-                <div class="text-xs text-amber-400 font-mono">98.78% Remaining</div>
+                <div class="text-xs text-amber-400 font-mono" id="kpiRemainingPct">98.78%</div>
             </div>
 
             <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
@@ -252,42 +304,7 @@
                     <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
                 </div>
                 <div class="text-3xl font-black font-mono text-rose-400 mb-1" id="kpiDamagedVal">0</div>
-                <div class="text-xs text-rose-400">QA Inspection Flag</div>
-            </div>
-        </section>
-
-        <!-- Detailed Packing Plan Table (G01 - G12) -->
-        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden">
-            <div class="p-5 border-b border-slate-700/60 flex items-center justify-between">
-                <div>
-                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
-                        <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
-                        <span>Packing Plan Detailed Breakdown (Grades G01 - G12)</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Matrix with Shift Tracking</p>
-                </div>
-            </div>
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
-                        <tr>
-                            <th class="p-3.5">Grade</th>
-                            <th class="p-3.5 text-center">MOE-DNE</th>
-                            <th class="p-3.5 text-center">MOE-AD</th>
-                            <th class="p-3.5 text-center">Ajyal-1</th>
-                            <th class="p-3.5 text-center">Ajyal-2</th>
-                            <th class="p-3.5 text-center text-cyan-300">Total Target</th>
-                            <th class="p-3.5 text-center text-amber-300">Morning</th>
-                            <th class="p-3.5 text-center text-indigo-300">Evening</th>
-                            <th class="p-3.5 text-center text-rose-400">Damaged</th>
-                            <th class="p-3.5 text-center text-emerald-400">Total Packed</th>
-                            <th class="p-3.5 text-center text-amber-400">Remaining</th>
-                            <th class="p-3.5 text-center">Progress %</th>
-                        </tr>
-                    </thead>
-                    <tbody id="packingTableBody" class="divide-y divide-slate-800/60 font-mono">
-                    </tbody>
-                </table>
+                <div class="text-xs text-rose-400">QA Flag</div>
             </div>
         </section>
 
@@ -314,9 +331,135 @@
             </div>
         </section>
 
+        <!-- Detailed Breakdown Data Table with Quick Entry -->
+        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden">
+            <div class="p-5 border-b border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-100 text-lg flex items-center gap-2">
+                        <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Packing Plan Detailed Breakdown (G01 - G12)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Plan Breakdown with Shift Differentiation</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search grade..." class="bg-slate-900 border border-slate-700 text-xs rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
+                    <button onclick="exportData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all">
+                        <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Shift Entry Bar -->
+            <div class="bg-slate-900/80 px-5 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2 text-slate-300 font-semibold">
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                    <span>Quick Shift Production Entry (<span id="activeShiftLabelName" class="text-cyan-400 font-bold">Morning Shift</span>):</span>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                    <input type="date" id="quickLogDate" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300">
+                    <select id="quickSelectGrade" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"></select>
+                    <input type="number" id="quickPackedValue" placeholder="Packed qty..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono font-bold w-28">
+                    <input type="number" id="quickDamagedValue" placeholder="Damaged..." class="bg-slate-950 border border-rose-900/60 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 font-mono font-bold w-24">
+                    <button onclick="submitQuickEntry()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1 transition-all">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>Log to Shift</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                        <tr>
+                            <th class="p-3.5">Grade</th>
+                            <th class="p-3.5 text-center">MOE-DNE</th>
+                            <th class="p-3.5 text-center">MOE-AD</th>
+                            <th class="p-3.5 text-center">Ajyal-1</th>
+                            <th class="p-3.5 text-center">Ajyal-2</th>
+                            <th class="p-3.5 text-center text-cyan-300">Total Target</th>
+                            <th class="p-3.5 text-center text-amber-300">Morning Shift</th>
+                            <th class="p-3.5 text-center text-indigo-300">Evening Shift</th>
+                            <th class="p-3.5 text-center text-rose-400">Damaged</th>
+                            <th class="p-3.5 text-center text-emerald-400">Total Packed</th>
+                            <th class="p-3.5 text-center text-amber-400">Remaining</th>
+                            <th class="p-3.5 text-center">Progress %</th>
+                            <th class="p-3.5 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packingTableBody" class="divide-y divide-slate-800/60 font-mono">
+                    </tbody>
+                    <tfoot class="bg-slate-900/95 font-bold text-slate-100 border-t-2 border-slate-700">
+                        <tr>
+                            <td class="p-4 font-sans text-sm">TOTAL PLAN:</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footDNE">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAD">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAjyal1">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAjyal2">0</td>
+                            <td class="p-4 text-center font-mono text-base text-cyan-400" id="footTotal">269,818</td>
+                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footMorning">0</td>
+                            <td class="p-4 text-center font-mono text-base text-indigo-400" id="footEvening">0</td>
+                            <td class="p-4 text-center font-mono text-base text-rose-400" id="footDamaged">0</td>
+                            <td class="p-4 text-center font-mono text-base text-emerald-400" id="footPacked">3,302</td>
+                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footRemaining">266,516</td>
+                            <td class="p-4 text-center font-mono text-sm text-emerald-300" id="footPct">1.22%</td>
+                            <td class="p-4 text-center text-slate-400 text-xs font-sans">Live Verified</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <!-- History Log & Handover Notes -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="lg:col-span-8 glass-card rounded-2xl border border-slate-700/60 overflow-hidden p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
+                        <span>Daily Shift & Workforce Production History Log</span>
+                    </h3>
+                    <button onclick="clearHistoryLog()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold">Clear History</button>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Shift Type</th>
+                                <th class="p-3">Grade</th>
+                                <th class="p-3 text-center">Packed Qty</th>
+                                <th class="p-3 text-center">Damaged</th>
+                                <th class="p-3 text-center">Workforce Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-800/60 font-mono">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="lg:col-span-4 glass-card rounded-2xl border border-slate-700/60 overflow-hidden p-5 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Shift Handover Notes</span>
+                        </h3>
+                        <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-mono">Auto-Save</span>
+                    </div>
+                    <textarea id="handoverNotesInput" oninput="saveHandoverNotes()" placeholder="Type shift handover notes here (e.g., Zebra ZT510 media sensor calibrated)..." class="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 custom-scrollbar resize-none"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span id="notesSavedStatus">Changes saved locally</span>
+                    <button onclick="clearNotes()" class="text-rose-400 hover:text-rose-300 font-semibold">Clear Notes</button>
+                </div>
+            </section>
+        </div>
+
     </main>
 
-    <!-- JavaScript Logic & Master Data -->
+    <!-- Full JavaScript Logic -->
     <script>
         let packingData = [
             { grade: 'Grade 01', dne: 10540, ad: 11200, ajyal1: 3100, ajyal2: 2400, morning: 0, evening: 0, damaged: 0 },
@@ -333,26 +476,65 @@
             { grade: 'Grade 12', dne: 9400,  ad: 10000, ajyal1: 2400, ajyal2: 1700, morning: 0, evening: 0, damaged: 0 }
         ];
 
+        let historyLog = [
+            { date: '2026-11-10', shift: 'Morning Shift', grade: 'Grade 10', packed: 1500, damaged: 0, workforce: 45 },
+            { date: '2026-11-10', shift: 'Evening Shift', grade: 'Grade 10', packed: 1802, damaged: 0, workforce: 40 }
+        ];
+
         let activeShift = 'morning';
         let sectorChartInstance = null;
         let statusDonutInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            setInterval(updateClock, 1000);
-            renderTable();
+            initLocalStorage();
+            setupQuickSelect();
+            renderAll();
             initCharts();
-            updateKPIs();
+            setInterval(updateLiveClock, 1000);
+            updateLiveClock();
         });
 
-        function updateClock() {
+        function initLocalStorage() {
+            const savedData = localStorage.getItem('e7_packing_data');
+            if (savedData) { try { packingData = JSON.parse(savedData); } catch(e) {} }
+            const savedHistory = localStorage.getItem('e7_history_log');
+            if (savedHistory) { try { historyLog = JSON.parse(savedHistory); } catch(e) {} }
+            const savedNotes = localStorage.getItem('e7_handover_notes');
+            if (savedNotes) document.getElementById('handoverNotesInput').value = savedNotes;
+            document.getElementById('quickLogDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function persistState() {
+            localStorage.setItem('e7_packing_data', JSON.stringify(packingData));
+            localStorage.setItem('e7_history_log', JSON.stringify(historyLog));
+        }
+
+        function saveHandoverNotes() {
+            localStorage.setItem('e7_handover_notes', document.getElementById('handoverNotesInput').value);
+        }
+
+        function clearNotes() {
+            document.getElementById('handoverNotesInput').value = '';
+            localStorage.removeItem('e7_handover_notes');
+        }
+
+        function updateLiveClock() {
             const now = new Date();
             document.getElementById('liveTimeText').textContent = now.toLocaleTimeString('en-GB');
             document.getElementById('liveDateText').textContent = now.toLocaleDateString('en-GB');
-            if (now.getDay() === 0) {
-                document.getElementById('sundayIndicator').classList.remove('hidden');
-            } else {
-                document.getElementById('sundayIndicator').classList.add('hidden');
+            if (now.getDay() === 0) document.getElementById('sundayIndicator').classList.remove('hidden');
+            else document.getElementById('sundayIndicator').classList.add('hidden');
+
+            const targetDate = new Date('2026-12-06T19:00:00');
+            const diffMs = targetDate - now;
+            if (diffMs > 0) {
+                const totalSeconds = Math.floor(diffMs / 1000);
+                document.getElementById('fractionalDaysCount').textContent = (totalSeconds / 86400).toFixed(2);
+                const rem = totalSeconds % 86400;
+                document.getElementById('hoursCount').textContent = String(Math.floor(rem / 3600)).padStart(2, '0');
+                document.getElementById('minutesCount').textContent = String(Math.floor((rem % 3600) / 60)).padStart(2, '0');
+                document.getElementById('secondsCount').textContent = String(rem % 60).padStart(2, '0');
             }
         }
 
@@ -360,31 +542,98 @@
             activeShift = shift;
             const btnM = document.getElementById('btnMorningShift');
             const btnE = document.getElementById('btnEveningShift');
+            const labelName = document.getElementById('activeShiftLabelName');
             if (shift === 'morning') {
                 btnM.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300';
                 btnE.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300';
+                labelName.textContent = 'Morning Shift';
             } else {
                 btnE.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-indigo-500/50 bg-indigo-500/20 text-indigo-300';
                 btnM.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300';
+                labelName.textContent = 'Evening Shift';
             }
         }
 
-        function renderTable() {
+        function setupQuickSelect() {
+            const select = document.getElementById('quickSelectGrade');
+            select.innerHTML = '';
+            packingData.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.grade;
+                opt.textContent = item.grade;
+                select.appendChild(opt);
+            });
+        }
+
+        function submitQuickEntry() {
+            const date = document.getElementById('quickLogDate').value;
+            const grade = document.getElementById('quickSelectGrade').value;
+            const packed = parseInt(document.getElementById('quickPackedValue').value) || 0;
+            const damaged = parseInt(document.getElementById('quickDamagedValue').value) || 0;
+
+            if (packed <= 0 && damaged <= 0) {
+                alert('Please enter a valid packed or damaged quantity.');
+                return;
+            }
+
+            const item = packingData.find(d => d.grade === grade);
+            if (item) {
+                if (activeShift === 'morning') item.morning += packed;
+                else item.evening += packed;
+                item.damaged += damaged;
+            }
+
+            const workforce = activeShift === 'morning' ? parseInt(document.getElementById('morningStaffInput').value) || 45 : parseInt(document.getElementById('eveningStaffInput').value) || 40;
+            historyLog.unshift({
+                date: date || new Date().toISOString().split('T')[0],
+                shift: activeShift === 'morning' ? 'Morning Shift' : 'Evening Shift',
+                grade: grade, packed: packed, damaged: damaged, workforce: workforce
+            });
+
+            persistState();
+            renderAll();
+            updateCharts();
+            document.getElementById('quickPackedValue').value = '';
+            document.getElementById('quickDamagedValue').value = '';
+        }
+
+        function clearHistoryLog() {
+            if (confirm('Clear history log?')) {
+                historyLog = [];
+                packingData.forEach(d => { d.morning = 0; d.evening = 0; d.damaged = 0; });
+                persistState();
+                renderAll();
+                updateCharts();
+            }
+        }
+
+        function renderAll() {
+            renderTable();
+            renderHistoryTable();
+            updateKPIs();
+        }
+
+        function renderTable(filterQuery = '') {
             const tbody = document.getElementById('packingTableBody');
             tbody.innerHTML = '';
-            packingData.forEach(row => {
+            let fDNE = 0, fAD = 0, fAjyal1 = 0, fAjyal2 = 0;
+            let fTotal = 0, fMorning = 0, fEvening = 0, fDamaged = 0, fPacked = 0, fRemaining = 0;
+
+            packingData.forEach((row, index) => {
+                if (filterQuery && !row.grade.toLowerCase().includes(filterQuery.toLowerCase())) return;
                 const totalTarget = row.dne + row.ad + row.ajyal1 + row.ajyal2;
                 const totalPacked = row.morning + row.evening;
                 const remaining = Math.max(0, totalTarget - totalPacked);
                 const pct = totalTarget > 0 ? ((totalPacked / totalTarget) * 100).toFixed(2) : '0.00';
 
+                fDNE += row.dne; fAD += row.ad; fAjyal1 += row.ajyal1; fAjyal2 += row.ajyal2;
+                fTotal += totalTarget; fMorning += row.morning; fEvening += row.evening;
+                fDamaged += row.damaged; fPacked += totalPacked; fRemaining += remaining;
+
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-800/40 transition-colors';
                 tr.innerHTML = `
-                    <td class="p-3.5 font-sans font-bold text-white flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                        <span>${row.grade}</span>
-                    </td>
+                    <td class="p-3.5 font-sans font-bold text-white flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan-400"></span><span>${row.grade}</span></td>
                     <td class="p-3.5 text-center text-slate-300">${row.dne.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-slate-300">${row.ad.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-slate-300">${row.ajyal1.toLocaleString()}</td>
@@ -395,75 +644,143 @@
                     <td class="p-3.5 text-center text-rose-400">${row.damaged > 0 ? row.damaged.toLocaleString() : '0'}</td>
                     <td class="p-3.5 text-center text-emerald-400 font-bold">${totalPacked.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-amber-400">${remaining.toLocaleString()}</td>
-                    <td class="p-3.5 text-center">
-                        <span class="px-2 py-0.5 rounded text-[11px] font-bold ${parseFloat(pct) > 5 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
-                            ${pct}%
-                        </span>
-                    </td>
+                    <td class="p-3.5 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-300">${pct}%</span></td>
+                    <td class="p-3.5 text-center"><button onclick="promptEditRow(${index})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('footDNE').textContent = fDNE.toLocaleString();
+            document.getElementById('footAD').textContent = fAD.toLocaleString();
+            document.getElementById('footAjyal1').textContent = fAjyal1.toLocaleString();
+            document.getElementById('footAjyal2').textContent = fAjyal2.toLocaleString();
+            document.getElementById('footTotal').textContent = fTotal.toLocaleString();
+            document.getElementById('footMorning').textContent = fMorning.toLocaleString();
+            document.getElementById('footEvening').textContent = fEvening.toLocaleString();
+            document.getElementById('footDamaged').textContent = fDamaged.toLocaleString();
+            document.getElementById('footPacked').textContent = fPacked.toLocaleString();
+            document.getElementById('footRemaining').textContent = fRemaining.toLocaleString();
+            document.getElementById('footPct').textContent = (fTotal > 0 ? ((fPacked / fTotal) * 100).toFixed(2) : '0.00') + '%';
+            lucide.createIcons();
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            if (historyLog.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No shift production entries logged yet.</td></tr>`;
+                return;
+            }
+            historyLog.forEach(entry => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-300">${entry.date}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">${entry.shift}</span></td>
+                    <td class="p-3 text-white font-sans font-semibold">${entry.grade}</td>
+                    <td class="p-3 text-center text-emerald-400 font-bold">+${entry.packed.toLocaleString()}</td>
+                    <td class="p-3 text-center text-rose-400">${entry.damaged}</td>
+                    <td class="p-3 text-center text-cyan-300">${entry.workforce} workers</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         function updateKPIs() {
-            let totalTarget = 0, totalPacked = 0;
+            let totalTarget = 0, totalPacked = 0, totalDamaged = 0, totalMorning = 0, totalEvening = 0;
             packingData.forEach(row => {
                 totalTarget += (row.dne + row.ad + row.ajyal1 + row.ajyal2);
                 totalPacked += (row.morning + row.evening);
+                totalDamaged += row.damaged;
+                totalMorning += row.morning;
+                totalEvening += row.evening;
             });
             const remaining = Math.max(0, totalTarget - totalPacked);
             const pct = totalTarget > 0 ? ((totalPacked / totalTarget) * 100).toFixed(2) : '0.00';
 
-            document.getElementById('kpiTotalTarget').textContent = totalTarget.toLocaleString();
+            document.getElementById('kpiTotalTargetVal').textContent = totalTarget.toLocaleString();
             document.getElementById('kpiPackedVal').textContent = totalPacked.toLocaleString();
-            document.getElementById('kpiPackedPct').textContent = `Completion Rate: ${pct}%`;
+            document.getElementById('kpiPackedPct').textContent = `(${pct}%)`;
             document.getElementById('kpiRemainingVal').textContent = remaining.toLocaleString();
+            document.getElementById('kpiRemainingPct').textContent = (100 - parseFloat(pct)).toFixed(2) + '%';
+            document.getElementById('kpiDamagedVal').textContent = totalDamaged.toLocaleString();
+            document.getElementById('morningShiftTotalDisplay').textContent = totalMorning.toLocaleString();
+            document.getElementById('eveningShiftTotalDisplay').textContent = totalEvening.toLocaleString();
+
+            const morningStaff = parseInt(document.getElementById('morningStaffInput').value) || 45;
+            const eveningStaff = parseInt(document.getElementById('eveningStaffInput').value) || 40;
+            document.getElementById('morningRateVal').textContent = (morningStaff > 0 ? Math.round(totalMorning / (morningStaff * 12)) : 0) + ' Pcs/W/Hr';
+            document.getElementById('eveningRateVal').textContent = (eveningStaff > 0 ? Math.round(totalEvening / (eveningStaff * 12)) : 0) + ' Pcs/W/Hr';
         }
+
+        function filterTable() {
+            renderTable(document.getElementById('tableSearch').value);
+        }
+
+        function promptEditRow(index) {
+            const row = packingData[index];
+            const m = prompt(`Edit Morning Shift packed for ${row.grade}:`, row.morning);
+            if (m !== null) {
+                const e = prompt(`Edit Evening Shift packed for ${row.grade}:`, row.evening);
+                if (e !== null) {
+                    row.morning = parseInt(m) || 0;
+                    row.evening = parseInt(e) || 0;
+                    persistState();
+                    renderAll();
+                    updateCharts();
+                }
+            }
+        }
+
+        function updateShiftWorkforce() { renderAll(); }
 
         function initCharts() {
             const ctxSector = document.getElementById('sectorChart').getContext('2d');
-            const labels = packingData.map(d => d.grade);
-            const targets = packingData.map(d => d.dne + d.ad + d.ajyal1 + d.ajyal2);
-            const packed = packingData.map(d => d.morning + d.evening);
-
             sectorChartInstance = new Chart(ctxSector, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: packingData.map(d => d.grade),
                     datasets: [
-                        { label: 'Total Target', data: targets, backgroundColor: 'rgba(72, 202, 228, 0.4)', borderColor: '#48CAE4', borderWidth: 1, borderRadius: 6 },
-                        { label: 'Total Packed', data: packed, backgroundColor: '#06D6A0', borderRadius: 6 }
+                        { label: 'Total Target', data: packingData.map(d => d.dne + d.ad + d.ajyal1 + d.ajyal2), backgroundColor: 'rgba(72, 202, 228, 0.4)', borderColor: '#48CAE4', borderWidth: 1, borderRadius: 6 },
+                        { label: 'Total Packed', data: packingData.map(d => d.morning + d.evening), backgroundColor: '#06D6A0', borderRadius: 6 }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
             });
 
             const ctxDonut = document.getElementById('statusDonutChart').getContext('2d');
             let sumDNE = 0, sumAD = 0, sumAjyal1 = 0, sumAjyal2 = 0;
-            packingData.forEach(d => {
-                sumDNE += d.dne; sumAD += d.ad; sumAjyal1 += d.ajyal1; sumAjyal2 += d.ajyal2;
-            });
-
+            packingData.forEach(d => { sumDNE += d.dne; sumAD += d.ad; sumAjyal1 += d.ajyal1; sumAjyal2 += d.ajyal2; });
             statusDonutInstance = new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
                     labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
                     datasets: [{ data: [sumDNE, sumAD, sumAjyal1, sumAjyal2], backgroundColor: ['#48CAE4', '#3A506B', '#FFB703', '#06D6A0'], borderWidth: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }
             });
+        }
+
+        function updateCharts() {
+            if (!sectorChartInstance || !statusDonutInstance) return;
+            sectorChartInstance.data.datasets[0].data = packingData.map(d => d.dne + d.ad + d.ajyal1 + d.ajyal2);
+            sectorChartInstance.data.datasets[1].data = packingData.map(d => d.morning + d.evening);
+            sectorChartInstance.update();
+        }
+
+        function exportData() {
+            let csv = 'Grade,MOE-DNE,MOE-AD,Ajyal-1,Ajyal-2,Total Target,Morning,Evening,Damaged,Total Packed,Remaining,Progress\n';
+            packingData.forEach(row => {
+                const target = row.dne + row.ad + row.ajyal1 + row.ajyal2;
+                const packed = row.morning + row.evening;
+                csv += `"${row.grade}",${row.dne},${row.ad},${row.ajyal1},${row.ajyal2},${target},${row.morning},${row.evening},${row.damaged},${packed},${Math.max(0, target - packed)},"${((packed/target)*100).toFixed(2)}%"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'E7_Packing_Dashboard_Term2.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
