@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E7 Group - Packing & Distribution Dashboard</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // إعدادات قاعدة البيانات الخاصة بك
         const firebaseConfig = {
             apiKey: "AIzaSyB09o7c511T_E5OXVCTPxQenkeEJHjAkw",
             authDomain: "e7-group---packing-dashboard.firebaseapp.com",
@@ -26,46 +24,86 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ربط الحقول والتحديث الحي المباشر
-        window.saveDataToCloud = function(shiftData) {
-            set(ref(db, 'dashboard/currentData'), shiftData);
+        window.updateCloudData = function() {
+            const morningVal = document.getElementById('morning-input').value || 0;
+            const eveningVal = document.getElementById('evening-input').value || 0;
+            set(ref(db, 'dashboard/shifts'), {
+                morning: morningVal,
+                evening: eveningVal
+            });
         };
 
-        onValue(ref(db, 'dashboard/currentData'), (snapshot) => {
+        onValue(ref(db, 'dashboard/shifts'), (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // تحديث واجهة المستخدم بالبيانات الواردة من السحابة
-                document.getElementById('status-badge').className = "px-3 py-1 bg-emerald-600 text-white rounded-full text-sm font-semibold flex items-center gap-2";
-                document.getElementById('status-badge').innerHTML = "🟢 Online Mode (Live)";
-                if(document.getElementById('morning-input')) {
-                    document.getElementById('morning-input').value = data.morning || 0;
-                }
-                if(document.getElementById('evening-input')) {
-                    document.getElementById('evening-input').value = data.evening || 0;
+                if(document.getElementById('morning-input')) document.getElementById('morning-input').value = data.morning;
+                if(document.getElementById('evening-input')) document.getElementById('evening-input').value = data.evening;
+                if(document.getElementById('cloud-status')) {
+                    document.getElementById('cloud-status').innerText = "Cloud Live";
+                    document.getElementById('cloud-status').className = "px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1";
                 }
             }
         });
     </script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-6">
-    <div class="max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-xl shadow">
-            <h1 class="text-xl font-bold">E7 Group Packing Dashboard</h1>
-            <div id="status-badge" class="px-3 py-1 bg-amber-600 text-white rounded-full text-sm font-semibold flex items-center gap-2">
-                🟡 Connecting...
+<body class="bg-slate-950 text-white min-h-screen p-4 font-sans">
+    <div class="max-w-xl mx-auto space-y-4">
+        
+        <!-- Header -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex justify-between items-center shadow-lg">
+            <div>
+                <h1 class="text-lg font-bold text-blue-400">E7 Group - Packing & Distribution Dashboard</h1>
+                <p class="text-xs text-slate-400">Warehouse Operations & Logistics Real-time Control System</p>
+            </div>
+            <div class="text-left">
+                <span id="cloud-status" class="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold">Connecting...</span>
+                <span class="block text-[10px] text-slate-400 mt-1">Term 2 (2026/2027)</span>
             </div>
         </div>
 
-        <div class="bg-slate-800 p-6 rounded-xl shadow grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="block text-sm font-medium mb-2">Morning Shift Quantity</label>
-                <input type="number" id="morning-input" onchange="saveDataToCloud({morning: this.value, evening: document.getElementById('evening-input').value})" class="w-full bg-slate-700 border border-slate-600 rounded p-3 text-white" placeholder="أدخل كمية الشفت الصباحي">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-2">Evening Shift Quantity</label>
-                <input type="number" id="evening-input" onchange="saveDataToCloud({morning: document.getElementById('morning-input').value, evening: this.value})" class="w-full bg-slate-700 border border-slate-600 rounded p-3 text-white" placeholder="أدخل كمية الشفت المسائي">
+        <!-- Shift Inputs & Targets -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-4 shadow-lg">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Morning Shift Output</label>
+                    <input type="number" id="morning-input" oninput="updateCloudData()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white text-sm font-bold focus:outline-none focus:border-blue-500" placeholder="0">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Evening Shift Output</label>
+                    <input type="number" id="evening-input" oninput="updateCloudData()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white text-sm font-bold focus:outline-none focus:border-blue-500" placeholder="0">
+                </div>
             </div>
         </div>
+
+        <!-- Total Targeted Students -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-slate-400 font-semibold tracking-wider">TOTAL TARGETED STUDENTS</span>
+                <span class="text-xs text-blue-400 font-bold">100%</span>
+            </div>
+            <div class="text-3xl font-black text-white mb-2">247,592</div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-500 h-full w-full"></div>
+            </div>
+            <span class="block text-[10px] text-slate-400 mt-1">Students (Term 2 Total)</span>
+        </div>
+
+        <!-- Packed to Date -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-400 font-semibold tracking-wider">PACKED TO DATE</span>
+                <span class="text-xs text-emerald-400 font-bold">1.33%</span>
+            </div>
+            <div class="text-3xl font-black text-emerald-400 mb-2">3,302</div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-2">
+                <div class="bg-emerald-500 h-full" style="width: 1.33%;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-400">
+                <span>Total Output Completed</span>
+                <span>Live Sync Active</span>
+            </div>
+        </div>
+
     </div>
 </body>
 </html>
