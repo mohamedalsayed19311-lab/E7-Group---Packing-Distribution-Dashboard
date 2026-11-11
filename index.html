@@ -33,12 +33,11 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDKs -->
+   <!-- Firebase SDKs & Live Sync -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Your Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAA-j54dJzpth691_NRYT9Vn9mFcThDMWI",
             authDomain: "packing-logistics-dashboard.firebaseapp.com",
@@ -52,6 +51,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // دالة عامة لحفظ البيانات في السحابة لتر the updates لجميع المستخدمين
         window.saveCloudData = function(path, value) {
             const dbRef = ref(db, 'dashboard/' + path);
             set(dbRef, value).then(() => {
@@ -61,23 +61,40 @@
             });
         };
 
+        // الاستماع الفوري للتحديثات السحابية وتحديث الجدول والرسوم البيانية تلقائياً
         const dashboardRef = ref(db, 'dashboard/');
         onValue(dashboardRef, (snapshot) => {
             const data = snapshot.val();
             const dot = document.getElementById('cloudSyncDot');
             const txt = document.getElementById('cloudStatusText');
+            
             if (data) {
-                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-                txt.textContent = "Cloud Live (Connected)";
+                if (dot && txt) {
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                    txt.textContent = "Cloud Live (Connected)";
+                }
+                
+                // تحديث بيانات التعبئة محلياً فور وصولها من السحابة
+                if (data.packingData && typeof window.updateDataFromCloud === 'function') {
+                    window.updateDataFromCloud(data.packingData);
+                }
+                if (data.historyLog && typeof window.updateHistoryFromCloud === 'function') {
+                    window.updateHistoryFromCloud(data.historyLog);
+                }
             } else {
-                dot.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
-                txt.textContent = "Cloud Connected (Ready)";
+                if (dot && txt) {
+                    dot.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
+                    txt.textContent = "Cloud Connected (Ready)";
+                }
             }
         }, (error) => {
             const dot = document.getElementById('cloudSyncDot');
             const txt = document.getElementById('cloudStatusText');
-            dot.className = "w-2 h-2 rounded-full bg-rose-500";
-            txt.textContent = "Cloud Error";
+            if (dot && txt) {
+                dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                txt.textContent = "Cloud Error";
+            }
+            console.error("Firebase connection error:", error);
         });
     </script>
     <style>
