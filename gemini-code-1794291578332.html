@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E7 Group - Packing & Logistics Dashboard (Term 2 2026/2027)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        e7navy: '#0B132B',
+                        e7dark: '#1C2541',
+                        e7blue: '#3A506B',
+                        e7cyan: '#48CAE4',
+                        e7gold: '#FFB703',
+                        e7accent: '#00B4D8',
+                        e7green: '#06D6A0',
+                        e7red: '#EF476F'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b132b;
+            color: #f1f5f9;
+        }
+        .glass-panel {
+            background: rgba(28, 37, 65, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: linear-gradient(135deg, rgba(30, 41, 70, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(72, 202, 228, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(72, 202, 228, 0.3);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(72, 202, 228, 0.6);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased custom-scrollbar">
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-700/50 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg">
+                        E7
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-bold text-lg lg:text-xl tracking-tight text-white">
+                                E7 Group - Packing & Distribution Dashboard
+                            </h1>
+                            <span class="px-2 py-0.5 text-xs font-bold bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30">
+                                Term 2 (2026/2027)
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">Warehouse Operations & Logistics Real-Time Control System</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Clock & Shift Status Bar -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end overflow-x-auto">
+                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="cloudSyncDot"></span>
+                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">Cloud Live</span>
+                </div>
+
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs font-mono">
+                    <i data-lucide="clock" class="w-4 h-4 text-cyan-400 animate-pulse"></i>
+                    <span id="liveTimeText" class="text-slate-200 font-semibold">--:--:--</span>
+                    <span class="text-slate-500">|</span>
+                    <span id="liveDateText" class="text-slate-400">--/--/----</span>
+                    <span id="sundayIndicator" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                        Sunday Holiday 🏖️
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1.5 rounded-xl text-xs">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span class="text-amber-300 font-semibold" id="activeShiftBadge">Morning Shift (07:00 - 19:00)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+        <!-- Dynamic Shift & Precision Countdown Banner -->
+        <section class="glass-card rounded-2xl p-4 lg:p-6 border border-cyan-500/20 glow-cyan relative overflow-hidden" id="countdownBanner">
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <!-- Precision Countdown KPI -->
+                <div class="lg:col-span-5 space-y-3 border-b lg:border-b-0 lg:border-r border-slate-700/50 pb-4 lg:pb-0 lg:pr-6">
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                        <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                            <i data-lucide="hourglass" class="w-4 h-4 text-cyan-400"></i>
+                            <span>Net Workable Days (Excl. Sundays)</span>
+                        </span>
+                        <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold" id="targetDateBadge">
+                            Target: Dec 06, 2026
+                        </span>
+                    </div>
+
+                    <div class="flex items-baseline gap-3">
+                        <div class="text-4xl lg:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400" id="fractionalDaysCount">
+                            20.48
+                        </div>
+                        <div class="text-lg font-bold text-slate-300">Days Remaining</div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-slate-200 text-sm" id="hoursCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Hours</div>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-slate-200 text-sm" id="minutesCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Minutes</div>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-cyan-400 text-sm" id="secondsCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Seconds</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shift Controller & Separate Shift Workforce Management -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                            <span>Shift Time Controls & Separate Workforce (07:00 ⇄ 19:00)</span>
+                        </h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Shift Switcher -->
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <label class="text-xs text-slate-400 block font-semibold">Active Logging Shift:</label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="setShift('morning')" id="btnMorningShift" class="px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300">
+                                    <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
+                                    <span>Morning (07:00 - 19:00)</span>
+                                </button>
+                                <button onclick="setShift('evening')" id="btnEveningShift" class="px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700">
+                                    <i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                    <span>Evening (19:00 - 07:00)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Separate Workforce Inputs per Shift -->
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <label class="text-xs text-slate-400 block font-semibold">Workforce Count per Shift:</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span class="text-[10px] text-amber-400 block">Morning Staff</span>
+                                    <input type="number" id="morningStaffInput" onchange="updateShiftWorkforce()" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-indigo-400 block">Evening Staff</span>
+                                    <input type="number" id="eveningStaffInput" onchange="updateShiftWorkforce()" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shift Production Summary Card Bar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                                <span class="text-slate-300 font-semibold">Morning Shift Total:</span>
+                            </div>
+                            <div class="font-mono font-bold text-amber-400 text-sm" id="morningShiftTotalDisplay">0</div>
+                        </div>
+
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>
+                                <span class="text-slate-300 font-semibold">Evening Shift Total:</span>
+                            </div>
+                            <div class="font-mono font-bold text-indigo-400 text-sm" id="eveningShiftTotalDisplay">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Executive KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Total Targeted Students</span>
+                    <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-black font-mono text-white mb-1" id="kpiTotalTargetVal">269,818</div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Students (Term 2 Total)</span>
+                    <span class="text-cyan-400 font-semibold">100%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-blue-500 h-full rounded-full w-full"></div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Packed To Date</span>
+                    <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-2 mb-1">
+                    <span class="text-3xl font-black font-mono text-emerald-400" id="kpiPackedVal">3,302</span>
+                    <span class="text-xs font-bold text-emerald-500 font-mono" id="kpiPackedPct">(1.22%)</span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Total Output Completed</span>
+                    <span class="text-emerald-400 font-mono font-bold" id="activeShiftAddedBadge">Active Shift: +0</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-emerald-400 h-full rounded-full transition-all duration-500" id="packedProgressBar" style="width: 1.22%"></div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-amber-500/40 transition-all">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Remaining Balance</span>
+                    <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
+                        <i data-lucide="package-search" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-black font-mono text-amber-400 mb-1" id="kpiRemainingVal">266,516</div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Remaining Students</span>
+                    <span class="text-amber-400 font-mono font-bold" id="kpiRemainingPct">98.78%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-amber-400 h-full rounded-full transition-all duration-500" id="remainingProgressBar" style="width: 98.78%"></div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-purple-500/40 transition-all">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Required Daily Target</span>
+                    <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-black font-mono text-purple-300 mb-1" id="kpiDailyRequiredVal">11,242</div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Based on work days left</span>
+                    <span class="text-purple-400 font-bold">2 Shifts / Day</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-purple-500 h-full rounded-full w-3/4"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Charts Grid Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5 border border-slate-700/60 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Student Distribution by Sector</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Comparison of Total Targeted vs Completed per Educational Sector</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-slate-800 text-xs font-semibold text-slate-300 rounded-lg border border-slate-700">Live Data</span>
+                </div>
+                <div class="h-64 relative w-full">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5 border border-slate-700/60 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-5 h-5 text-amber-400"></i>
+                            <span>Sector Volume Breakdown</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Distribution across MOE & Ajyal Entities</p>
+                    </div>
+                </div>
+                <div class="h-64 relative w-full flex items-center justify-center">
+                    <canvas id="statusDonutChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Breakdown Data Table with Interactive Filters -->
+        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden">
+            <div class="p-5 border-b border-slate-700/60 flex flex-col md:flex-row items-md-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-100 text-lg flex items-center gap-2">
+                        <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Packing Plan Detailed Breakdown (G01 - G12)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Packing Plan Breakdown with Shift Differentiation</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search grade..." class="bg-slate-900 border border-slate-700 text-xs rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-cyan-500 w-40 sm:w-48">
+                    </div>
+
+                    <button onclick="copyShareableLink()" class="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span>Get Share Link</span>
+                    </button>
+
+                    <button onclick="exportData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all">
+                        <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Shift Entry Bar -->
+            <div class="bg-slate-900/80 px-5 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2 text-slate-300 font-semibold">
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                    <span>Quick Shift Production Entry (<span id="activeShiftLabelName" class="text-cyan-400 font-bold">Morning Shift</span>):</span>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <select id="quickSelectGrade" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                    </select>
+                    <input type="number" id="quickPackedValue" placeholder="Add packed qty..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono font-bold w-32 focus:outline-none focus:border-cyan-500">
+                    <button onclick="submitQuickEntry()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1 transition-all shrink-0">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>Log to Shift</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                        <tr>
+                            <th class="p-3.5">Grade</th>
+                            <th class="p-3.5 text-center">MOE-DNE</th>
+                            <th class="p-3.5 text-center">MOE-AD</th>
+                            <th class="p-3.5 text-center">Ajyal-1</th>
+                            <th class="p-3.5 text-center">Ajyal-2</th>
+                            <th class="p-3.5 text-center text-cyan-300">Total Target</th>
+                            <th class="p-3.5 text-center text-amber-300">Morning Shift</th>
+                            <th class="p-3.5 text-center text-indigo-300">Evening Shift</th>
+                            <th class="p-3.5 text-center text-emerald-400">Total Packed</th>
+                            <th class="p-3.5 text-center text-amber-400">Remaining</th>
+                            <th class="p-3.5 text-center">Progress %</th>
+                            <th class="p-3.5 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packingTableBody" class="divide-y divide-slate-800/60 font-mono">
+                    </tbody>
+                    <tfoot class="bg-slate-900/95 font-bold text-slate-100 border-t-2 border-slate-700">
+                        <tr>
+                            <td class="p-4 font-sans text-sm">TOTAL PLAN:</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footDNE">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAD">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAjyal1">0</td>
+                            <td class="p-4 text-center font-mono text-cyan-300" id="footAjyal2">0</td>
+                            <td class="p-4 text-center font-mono text-base text-cyan-400" id="footTotal">269,818</td>
+                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footMorning">0</td>
+                            <td class="p-4 text-center font-mono text-base text-indigo-400" id="footEvening">0</td>
+                            <td class="p-4 text-center font-mono text-base text-emerald-400" id="footPacked">3,302</td>
+                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footRemaining">266,516</td>
+                            <td class="p-4 text-center font-mono text-sm text-emerald-300" id="footPct">1.22%</td>
+                            <td class="p-4 text-center text-slate-400 text-xs font-sans">Live Verified</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+                © 2026-2027 <span class="text-cyan-400 font-bold">E7 Group Printing & Logistics</span> - All Rights Reserved
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-slate-400">Shift Times: Morning (07:00 - 19:00) | Evening (19:00 - 07:00)</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="text-emerald-400 font-mono">System Online</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Update Modal -->
+    <div id="updateModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-2xl max-w-md w-full border border-slate-700 p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
+                    <span>Update Shift Quantities</span>
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div>
+                <p class="text-xs text-slate-400 mb-1">Selected Grade:</p>
+                <div class="text-lg font-bold text-cyan-400 font-mono" id="modalGradeName">G01</div>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold text-amber-300 block mb-1">Morning Shift Packed Qty (07:00 - 19:00):</label>
+                    <input type="number" id="modalMorningInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-amber-300 font-mono text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-indigo-300 block mb-1">Evening Shift Packed Qty (19:00 - 07:00):</label>
+                    <input type="number" id="modalEveningInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-indigo-300 font-mono text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 transition-all">Cancel</button>
+                <button onclick="saveModalUpdate()" class="px-5 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition-all">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'e7-packing-dashboard';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-api-key",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:demo"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+
+        // Data Structure with distinct morning and evening packed quantities
+        window.packingData = [
+            { id: "G01", name: "G01", dne: 9479, ad: 12212, ajyal1: 0, ajyal2: 0, morningPacked: 3302, eveningPacked: 0 },
+            { id: "G02", name: "G02", dne: 9850, ad: 8544, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G03", name: "G03", dne: 9460, ad: 9214, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G04", name: "G04", dne: 8298, ad: 7535, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G05_GEN", name: "G05_GEN", dne: 11932, ad: 9237, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G05_ADV", name: "G05_ADV", dne: 1628, ad: 173, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G06_GEN", name: "G06_GEN", dne: 12545, ad: 9691, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G06_ADV", name: "G06_ADV", dne: 1356, ad: 256, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G07_GEN", name: "G07_GEN", dne: 13242, ad: 9411, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G07_ADV", name: "G07_ADV", dne: 1465, ad: 414, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G08_GEN", name: "G08_GEN", dne: 12100, ad: 8900, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G08_ADV", name: "G08_ADV", dne: 1500, ad: 350, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G09_GEN", name: "G09_GEN", dne: 11400, ad: 8200, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G09_ADV", name: "G09_ADV", dne: 1600, ad: 400, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G10_GEN", name: "G10_GEN", dne: 10500, ad: 7500, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G10_ADV", name: "G10_ADV", dne: 1700, ad: 450, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G11_GEN", name: "G11_GEN", dne: 9800, ad: 6900, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G11_ADV", name: "G11_ADV", dne: 1800, ad: 500, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G12_GEN", name: "G12_GEN", dne: 9200, ad: 6400, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G12_ADV", name: "G12_ADV", dne: 1900, ad: 550, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 }
+        ];
+
+        const TARGET_END_DATE = new Date("2026-12-06T23:59:59").getTime();
+
+        let currentShift = 'morning';
+        let morningStaffCount = 45;
+        let eveningStaffCount = 40;
+        let selectedRowId = null;
+        let sectorChartInstance = null;
+        let donutChartInstance = null;
+
+        async function syncToCloud() {
+            if (!currentUser || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
+                await setDoc(docRef, {
+                    packingData: window.packingData,
+                    morningStaff: morningStaffCount,
+                    eveningStaff: eveningStaffCount,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Cloud Sync Save Error:", err);
+            }
+        }
+
+        async function initCloudSync() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.warn("Auth Fallback:", e);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) {
+                    const statusText = document.getElementById('cloudStatusText');
+                    const statusDot = document.getElementById('cloudSyncDot');
+                    if (statusText) statusText.textContent = "Cloud Live";
+                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
+                    onSnapshot(docRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if (data.packingData && Array.isArray(data.packingData)) {
+                                window.packingData = data.packingData;
+                            }
+                            if (data.morningStaff) {
+                                morningStaffCount = data.morningStaff;
+                                document.getElementById('morningStaffInput').value = morningStaffCount;
+                            }
+                            if (data.eveningStaff) {
+                                eveningStaffCount = data.eveningStaff;
+                                document.getElementById('eveningStaffInput').value = eveningStaffCount;
+                            }
+                            window.renderTable();
+                            window.updateExecutiveKPIs();
+                            window.updateCharts();
+                        } else {
+                            syncToCloud();
+                        }
+                    }, (error) => {
+                        console.error("Snapshot error:", error);
+                    });
+                }
+            });
+        }
+
+        function countSundays(startDate, endDate) {
+            let sundays = 0;
+            let cur = new Date(startDate.getTime());
+            while (cur <= endDate) {
+                if (cur.getDay() === 0) sundays++;
+                cur.setDate(cur.getDate() + 1);
+            }
+            return sundays;
+        }
+
+        window.setShift = function(shift) {
+            currentShift = shift;
+            const morningBtn = document.getElementById('btnMorningShift');
+            const eveningBtn = document.getElementById('btnEveningShift');
+            const badge = document.getElementById('activeShiftBadge');
+            const activeLabel = document.getElementById('activeShiftLabelName');
+
+            if (shift === 'morning') {
+                morningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300";
+                eveningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
+                badge.textContent = "Morning Shift (07:00 - 19:00)";
+                if(activeLabel) activeLabel.textContent = "Morning Shift (07:00 - 19:00)";
+            } else {
+                eveningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-indigo-500/50 bg-indigo-500/20 text-indigo-300";
+                morningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
+                badge.textContent = "Evening Shift (19:00 - 07:00)";
+                if(activeLabel) activeLabel.textContent = "Evening Shift (19:00 - 07:00)";
+            }
+        };
+
+        window.updateShiftWorkforce = function() {
+            const mVal = parseInt(document.getElementById('morningStaffInput').value);
+            const eVal = parseInt(document.getElementById('eveningStaffInput').value);
+            if (!isNaN(mVal) && mVal > 0) morningStaffCount = mVal;
+            if (!isNaN(eVal) && eVal > 0) eveningStaffCount = eVal;
+            syncToCloud();
+        };
+
+        window.submitQuickEntry = function() {
+            const gradeId = document.getElementById('quickSelectGrade').value;
+            const inputVal = parseInt(document.getElementById('quickPackedValue').value);
+            if (!isNaN(inputVal) && inputVal > 0 && gradeId) {
+                const row = window.packingData.find(r => r.id === gradeId);
+                if (row) {
+                    if (currentShift === 'morning') {
+                        row.morningPacked += inputVal;
+                    } else {
+                        row.eveningPacked += inputVal;
+                    }
+                    document.getElementById('quickPackedValue').value = '';
+                    window.renderTable();
+                    window.updateExecutiveKPIs();
+                    window.updateCharts();
+                    syncToCloud();
+                }
+            }
+        };
+
+        function startLiveClockAndCountdown() {
+            function update() {
+                const now = new Date();
+                const hoursStr = String(now.getHours()).padStart(2, '0');
+                const minsStr = String(now.getMinutes()).padStart(2, '0');
+                const secsStr = String(now.getSeconds()).padStart(2, '0');
+                
+                const timeEl = document.getElementById('liveTimeText');
+                const dateEl = document.getElementById('liveDateText');
+                if (timeEl) timeEl.textContent = `${hoursStr}:${minsStr}:${secsStr}`;
+
+                const dayStr = String(now.getDate()).padStart(2, '0');
+                const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+                const yearStr = now.getFullYear();
+                if (dateEl) dateEl.textContent = `${dayStr}/${monthStr}/${yearStr}`;
+
+                const currentHour = now.getHours();
+                // Auto shift switch: Morning 07:00 to 19:00, Evening 19:00 to 07:00
+                if (currentHour >= 7 && currentHour < 19) {
+                    if (currentShift !== 'morning') window.setShift('morning');
+                } else {
+                    if (currentShift !== 'evening') window.setShift('evening');
+                }
+
+                const isSunday = now.getDay() === 0;
+                const sundayBadge = document.getElementById('sundayIndicator');
+                const countdownBanner = document.getElementById('countdownBanner');
+
+                if (isSunday && sundayBadge && countdownBanner) {
+                    sundayBadge.classList.remove('hidden');
+                    countdownBanner.classList.add('border-amber-500/50', 'bg-amber-950/20');
+                } else if (sundayBadge && countdownBanner) {
+                    sundayBadge.classList.add('hidden');
+                    countdownBanner.classList.remove('border-amber-500/50', 'bg-amber-950/20');
+                }
+
+                const targetDate = new Date(TARGET_END_DATE);
+                const diffTime = TARGET_END_DATE - now.getTime();
+
+                if (diffTime > 0) {
+                    const totalDaysExact = diffTime / (1000 * 60 * 60 * 24);
+                    const sundaysCount = countSundays(now, targetDate);
+                    const netWorkDays = Math.max(0, totalDaysExact - sundaysCount);
+                    
+                    const daysCountEl = document.getElementById('fractionalDaysCount');
+                    if (daysCountEl) daysCountEl.textContent = netWorkDays.toFixed(2);
+
+                    const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+
+                    const hEl = document.getElementById('hoursCount');
+                    const mEl = document.getElementById('minutesCount');
+                    const sEl = document.getElementById('secondsCount');
+                    if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+                    if (mEl) mEl.textContent = String(minutes).padStart(2, '0');
+                    if (sEl) sEl.textContent = String(seconds).padStart(2, '0');
+                }
+                window.updateExecutiveKPIs();
+            }
+            update();
+            setInterval(update, 1000);
+        }
+
+        window.updateExecutiveKPIs = function() {
+            let totalTarget = 0;
+            let totalMorning = 0;
+            let totalEvening = 0;
+
+            window.packingData.forEach(row => {
+                const target = row.dne + row.ad + row.ajyal1 + row.ajyal2;
+                totalTarget += target;
+                totalMorning += row.morningPacked;
+                totalEvening += row.eveningPacked;
+            });
+
+            const totalPacked = totalMorning + totalEvening;
+            const remainingBalance = totalTarget - totalPacked;
+            const packedPct = ((totalPacked / totalTarget) * 100).toFixed(2);
+            const remainingPct = (100 - packedPct).toFixed(2);
+
+            const setVal = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+            
+            setVal('kpiTotalTargetVal', totalTarget.toLocaleString());
+            setVal('kpiPackedVal', totalPacked.toLocaleString());
+            setVal('kpiPackedPct', `(${packedPct}%)`);
+            setVal('kpiRemainingVal', remainingBalance.toLocaleString());
+            setVal('kpiRemainingPct', `${remainingPct}%`);
+            
+            setVal('morningShiftTotalDisplay', totalMorning.toLocaleString());
+            setVal('eveningShiftTotalDisplay', totalEvening.toLocaleString());
+
+            const activeShiftAdded = currentShift === 'morning' ? totalMorning : totalEvening;
+            setVal('activeShiftAddedBadge', `${currentShift === 'morning' ? 'Morning' : 'Evening'}: +${activeShiftAdded.toLocaleString()}`);
+
+            const packedBar = document.getElementById('packedProgressBar');
+            if (packedBar) packedBar.style.width = `${packedPct}%`;
+            const remBar = document.getElementById('remainingProgressBar');
+            if (remBar) remBar.style.width = `${remainingPct}%`;
+
+            setVal('footMorning', totalMorning.toLocaleString());
+            setVal('footEvening', totalEvening.toLocaleString());
+            setVal('footPacked', totalPacked.toLocaleString());
+            setVal('footRemaining', remainingBalance.toLocaleString());
+            setVal('footPct', `${packedPct}%`);
+        };
+
+        window.renderTable = function() {
+            const tbody = document.getElementById('packingTableBody');
+            const quickSelect = document.getElementById('quickSelectGrade');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (quickSelect && quickSelect.options.length === 0) {
+                window.packingData.forEach(row => {
+                    const opt = document.createElement('option');
+                    opt.value = row.id;
+                    opt.textContent = row.name;
+                    quickSelect.appendChild(opt);
+                });
+            }
+
+            let sumDNE = 0, sumAD = 0, sumAjyal1 = 0, sumAjyal2 = 0;
+
+            window.packingData.forEach(row => {
+                const totalTarget = row.dne + row.ad + row.ajyal1 + row.ajyal2;
+                const totalPackedRow = row.morningPacked + row.eveningPacked;
+                const remaining = totalTarget - totalPackedRow;
+                const pct = ((totalPackedRow / totalTarget) * 100).toFixed(1);
+
+                sumDNE += row.dne;
+                sumAD += row.ad;
+                sumAjyal1 += row.ajyal1;
+                sumAjyal2 += row.ajyal2;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50 transition-colors border-b border-slate-800/40";
+                tr.dataset.grade = row.name;
+
+                tr.innerHTML = `
+                    <td class="p-3.5 font-bold font-sans text-slate-200 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full ${totalPackedRow > 0 ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+                        ${row.name}
+                    </td>
+                    <td class="p-3.5 text-center text-slate-300">${row.dne.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ad.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ajyal1.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ajyal2.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-cyan-300">${totalTarget.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-amber-300">${row.morningPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-indigo-300">${row.eveningPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-emerald-400">${totalPackedRow.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-amber-400">${remaining.toLocaleString()}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="text-xs font-bold ${pct > 0 ? 'text-emerald-400' : 'text-slate-500'}">${pct}%</span>
+                    </td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="openModal('${row.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-cyan-600 hover:text-white text-cyan-400 border border-slate-700 rounded-lg text-xs transition-all flex items-center justify-center gap-1 mx-auto">
+                            <i data-lucide="edit" class="w-3 h-3"></i>
+                            <span class="hidden sm:inline font-sans">Edit</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const setVal = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+            setVal('footDNE', sumDNE.toLocaleString());
+            setVal('footAD', sumAD.toLocaleString());
+            setVal('footAjyal1', sumAjyal1.toLocaleString());
+            setVal('footAjyal2', sumAjyal2.toLocaleString());
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        window.filterTable = function() {
+            const query = document.getElementById('tableSearch').value.toUpperCase();
+            const rows = document.querySelectorAll('#packingTableBody tr');
+            rows.forEach(row => {
+                const gradeName = row.dataset.grade.toUpperCase();
+                row.style.display = gradeName.includes(query) ? '' : 'none';
+            });
+        };
+
+        function initCharts() {
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            let sumDNE = window.packingData.reduce((acc, r) => acc + r.dne, 0);
+            let sumAD = window.packingData.reduce((acc, r) => acc + r.ad, 0);
+            let sumAjyal1 = window.packingData.reduce((acc, r) => acc + r.ajyal1, 0);
+            let sumAjyal2 = window.packingData.reduce((acc, r) => acc + r.ajyal2, 0);
+
+            sectorChartInstance = new Chart(sectorCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
+                    datasets: [
+                        {
+                            label: 'Total Target',
+                            data: [sumDNE, sumAD, sumAjyal1, sumAjyal2],
+                            backgroundColor: 'rgba(56, 189, 248, 0.4)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 1.5,
+                            borderRadius: 8
+                        },
+                        {
+                            label: 'Packed Completed',
+                            data: [3302, 0, 0, 0],
+                            backgroundColor: 'rgba(52, 211, 153, 0.8)',
+                            borderColor: '#34d399',
+                            borderWidth: 1.5,
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    }
+                }
+            });
+
+            const donutCtx = document.getElementById('statusDonutChart').getContext('2d');
+            donutChartInstance = new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
+                    datasets: [{
+                        data: [sumDNE, sumAD, sumAjyal1, sumAjyal2],
+                        backgroundColor: ['#38bdf8', '#818cf8', '#fbbf24', '#f43f5e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        window.updateCharts = function() {
+            if (sectorChartInstance) {
+                let packedSum = window.packingData.reduce((acc, r) => acc + r.morningPacked + r.eveningPacked, 0);
+                sectorChartInstance.data.datasets[1].data[0] = packedSum;
+                sectorChartInstance.update();
+            }
+        };
+
+        window.openModal = function(id) {
+            selectedRowId = id;
+            const row = window.packingData.find(r => r.id === id);
+            if (row) {
+                document.getElementById('modalGradeName').textContent = row.name;
+                document.getElementById('modalMorningInput').value = row.morningPacked;
+                document.getElementById('modalEveningInput').value = row.eveningPacked;
+                document.getElementById('updateModal').classList.remove('hidden');
+            }
+        };
+
+        window.closeModal = function() {
+            document.getElementById('updateModal').classList.add('hidden');
+            selectedRowId = null;
+        };
+
+        window.saveModalUpdate = function() {
+            const mVal = parseInt(document.getElementById('modalMorningInput').value);
+            const eVal = parseInt(document.getElementById('modalEveningInput').value);
+            if (!isNaN(mVal) && !isNaN(eVal) && selectedRowId) {
+                const row = window.packingData.find(r => r.id === selectedRowId);
+                if (row) {
+                    row.morningPacked = mVal;
+                    row.eveningPacked = eVal;
+                    window.renderTable();
+                    window.updateExecutiveKPIs();
+                    window.updateCharts();
+                    syncToCloud();
+                    window.closeModal();
+                }
+            }
+        };
+
+        window.exportData = function() {
+            let csvContent = "data:text/csv;charset=utf-8,Grade,DNE,AD,Ajyal1,Ajyal2,MorningPacked,EveningPacked\n";
+            window.packingData.forEach(row => {
+                csvContent += `${row.name},${row.dne},${row.ad},${row.ajyal1},${row.ajyal2},${row.morningPacked},${row.eveningPacked}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `E7_Packing_Plan_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.copyShareableLink = function() {
+            let shareUrl = window.location.href;
+            if (shareUrl.includes('blob:') || shareUrl.includes('about:blank')) {
+                try {
+                    shareUrl = window.parent.location.href;
+                } catch (e) {
+                    shareUrl = window.location.origin + window.location.pathname;
+                }
+            }
+            
+            const existingModal = document.getElementById('shareModalBox');
+            if (existingModal) existingModal.remove();
+
+            const modalHtml = `
+                <div id="shareModalBox" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="glass-card rounded-2xl max-w-lg w-full border border-cyan-500/40 p-6 space-y-4 shadow-2xl">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h3 class="font-bold text-base text-white flex items-center gap-2">
+                                <i data-lucide="share-2" class="w-5 h-5 text-cyan-400"></i>
+                                <span>Share Dashboard Link with Colleagues</span>
+                            </h3>
+                            <button onclick="document.getElementById('shareModalBox').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <p class="text-xs text-slate-300">
+                            Copy this link and send it via WhatsApp or Email. Because this app uses <strong>Real-Time Cloud Sync</strong>, any updates made by your colleagues will instantly appear on your dashboard!
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <input type="text" readonly value="${shareUrl}" id="shareUrlInputBox" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono focus:outline-none">
+                            <button onclick="const inp = document.getElementById('shareUrlInputBox'); inp.select(); document.execCommand('copy'); alert('Link copied successfully!');" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shrink-0">
+                                Copy Link
+                            </button>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button onclick="document.getElementById('shareModalBox').remove()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        window.onload = function() {
+            window.renderTable();
+            initCharts();
+            startLiveClockAndCountdown();
+            initCloudSync();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
