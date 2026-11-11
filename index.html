@@ -96,7 +96,7 @@
             <div class="flex items-center gap-3 w-full md:w-auto justify-end overflow-x-auto">
                 <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="cloudSyncDot"></span>
-                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">Connecting...</span>
+                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">Cloud Live</span>
                 </div>
 
                 <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs font-mono">
@@ -191,11 +191,11 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <span class="text-[10px] text-amber-400 block">Morning Staff</span>
-                                    <input type="number" id="morningStaffInput" onchange="updateShiftWorkforce()" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500">
+                                    <input type="number" id="morningStaffInput" onchange="renderDashboard()" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500">
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-indigo-400 block">Evening Staff</span>
-                                    <input type="number" id="eveningStaffInput" onchange="updateShiftWorkforce()" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none focus:border-indigo-500">
+                                    <input type="number" id="eveningStaffInput" onchange="renderDashboard()" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none focus:border-indigo-500">
                                 </div>
                             </div>
                         </div>
@@ -220,6 +220,47 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Operational Status & Machinery Bar -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Online (4 / 4 Units)</span>
+                    </div>
+                </div>
+                <i data-lucide="printer" class="w-6 h-6 text-slate-500"></i>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Honeywell Scanners</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Active (12 Scanners)</span>
+                    </div>
+                </div>
+                <i data-lucide="qr-code" class="w-6 h-6 text-slate-500"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Morning Rate (Efficiency)</div>
+                    <div class="text-sm font-bold text-amber-400 font-mono mt-0.5" id="morningRateVal">0 Pcs / Worker / Hr</div>
+                </div>
+                <i data-lucide="zap" class="w-6 h-6 text-amber-400"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Evening Rate (Efficiency)</div>
+                    <div class="text-sm font-bold text-indigo-400 font-mono mt-0.5" id="eveningRateVal">0 Pcs / Worker / Hr</div>
+                </div>
+                <i data-lucide="activity" class="w-6 h-6 text-indigo-400"></i>
             </div>
         </section>
 
@@ -280,20 +321,20 @@
                 </div>
             </div>
 
-            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-purple-500/40 transition-all">
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60 relative overflow-hidden group hover:border-rose-500/40 transition-all">
                 <div class="flex items-center justify-between text-slate-400 mb-3">
-                    <span class="text-xs font-bold uppercase tracking-wider">Required Daily Target</span>
-                    <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
-                        <i data-lucide="target" class="w-5 h-5"></i>
+                    <span class="text-xs font-bold uppercase tracking-wider">Damaged / Rejected</span>
+                    <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                     </div>
                 </div>
-                <div class="text-3xl font-black font-mono text-purple-300 mb-1" id="kpiDailyRequiredVal">11,242</div>
+                <div class="text-3xl font-black font-mono text-rose-400 mb-1" id="kpiDamagedVal">0</div>
                 <div class="flex items-center justify-between text-xs text-slate-400">
-                    <span>Based on work days left</span>
-                    <span class="text-purple-400 font-bold">2 Shifts / Day</span>
+                    <span>Defective Textbook Count</span>
+                    <span class="text-rose-400 font-bold">QA Flag</span>
                 </div>
                 <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                    <div class="bg-purple-500 h-full rounded-full w-3/4"></div>
+                    <div class="bg-rose-500 h-full rounded-full w-1/12"></div>
                 </div>
             </div>
 
@@ -341,7 +382,7 @@
                         <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
                         <span>Packing Plan Detailed Breakdown (G01 - G12)</span>
                     </h3>
-                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Packing Plan Breakdown with Shift Differentiation</p>
+                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Packing Plan Breakdown with Shift Differentiation & Defect Tracking</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
@@ -373,6 +414,7 @@
                     <select id="quickSelectGrade" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
                     </select>
                     <input type="number" id="quickPackedValue" placeholder="Add packed qty..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono font-bold w-32 focus:outline-none focus:border-cyan-500">
+                    <input type="number" id="quickDamagedValue" placeholder="Damaged..." class="bg-slate-950 border border-rose-900/60 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 font-mono font-bold w-24 focus:outline-none focus:border-rose-500">
                     <button onclick="submitQuickEntry()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1 transition-all shrink-0">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                         <span>Log to Shift</span>
@@ -393,6 +435,7 @@
                             <th class="p-3.5 text-center text-cyan-300">Total Target</th>
                             <th class="p-3.5 text-center text-amber-300">Morning Shift</th>
                             <th class="p-3.5 text-center text-indigo-300">Evening Shift</th>
+                            <th class="p-3.5 text-center text-rose-400">Damaged</th>
                             <th class="p-3.5 text-center text-emerald-400">Total Packed</th>
                             <th class="p-3.5 text-center text-amber-400">Remaining</th>
                             <th class="p-3.5 text-center">Progress %</th>
@@ -411,6 +454,7 @@
                             <td class="p-4 text-center font-mono text-base text-cyan-400" id="footTotal">269,818</td>
                             <td class="p-4 text-center font-mono text-base text-amber-400" id="footMorning">0</td>
                             <td class="p-4 text-center font-mono text-base text-indigo-400" id="footEvening">0</td>
+                            <td class="p-4 text-center font-mono text-base text-rose-400" id="footDamaged">0</td>
                             <td class="p-4 text-center font-mono text-base text-emerald-400" id="footPacked">3,302</td>
                             <td class="p-4 text-center font-mono text-base text-amber-400" id="footRemaining">266,516</td>
                             <td class="p-4 text-center font-mono text-sm text-emerald-300" id="footPct">1.22%</td>
@@ -421,45 +465,63 @@
             </div>
         </section>
 
-        <!-- Daily Shift Production History Log Section -->
-        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden p-5 space-y-4">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
-                        <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
-                        <span>Daily Shift & Workforce Production History Log</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">Tracking date, active shift, output quantity, and participating workforce count</p>
+        <!-- Daily Shift Production History Log & Shift Handover Notes Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="lg:col-span-8 glass-card rounded-2xl border border-slate-700/60 overflow-hidden p-5 space-y-4">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                            <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
+                            <span>Daily Shift & Workforce Production History Log</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Tracking date, active shift, output quantity, defects, and participating workforce count</p>
+                    </div>
+                    <button onclick="clearHistoryLog()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all">
+                        Clear History
+                    </button>
                 </div>
-                <button onclick="clearHistoryLog()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all">
-                    Clear History
-                </button>
-            </div>
 
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
-                        <tr>
-                            <th class="p-3">Date</th>
-                            <th class="p-3">Shift Type</th>
-                            <th class="p-3">Grade</th>
-                            <th class="p-3 text-center">Packed Qty</th>
-                            <th class="p-3 text-center">Workforce Count</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody" class="divide-y divide-slate-800/60 font-mono">
-                        <!-- History injected dynamically -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Shift Type</th>
+                                <th class="p-3">Grade</th>
+                                <th class="p-3 text-center">Packed Qty</th>
+                                <th class="p-3 text-center">Damaged</th>
+                                <th class="p-3 text-center">Workforce Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-800/60 font-mono">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Shift Handover Notes -->
+            <section class="lg:col-span-4 glass-card rounded-2xl border border-slate-700/60 p-5 space-y-4 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2 mb-1">
+                        <i data-lucide="notebook-pen" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Shift Handover Notes</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Log notes, machinery status, or stock alerts between Morning & Evening supervisors</p>
+                    <textarea id="handoverNotesText" onchange="saveHandoverNotes()" placeholder="Type shift notes here..." class="w-full h-40 mt-3 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 custom-scrollbar resize-none"></textarea>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                    <span>Auto-saved to Cloud Sync</span>
+                    <span id="notesSavedBadge" class="text-emerald-400 font-semibold">Saved</span>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- Footer -->
     <footer class="border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-                ©️ 2026-2027 <span class="text-cyan-400 font-bold">E7 Group Printing & Logistics</span> - All Rights Reserved
+                © 2026-2027 <span class="text-cyan-400 font-bold">E7 Group Printing & Logistics</span> - All Rights Reserved
             </div>
             <div class="flex items-center gap-4">
                 <span class="text-slate-400">Shift Times: Morning (07:00 - 19:00) | Evening (19:00 - 07:00)</span>
@@ -475,7 +537,7 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="font-bold text-base text-white flex items-center gap-2">
                     <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
-                    <span>Update Shift Quantities</span>
+                    <span>Update Shift & Defect Quantities</span>
                 </h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
@@ -494,6 +556,10 @@
                     <label class="text-xs font-semibold text-indigo-300 block mb-1">Evening Shift Packed Qty (19:00 - 07:00):</label>
                     <input type="number" id="modalEveningInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-indigo-300 font-mono text-sm focus:outline-none focus:border-indigo-500">
                 </div>
+                <div>
+                    <label class="text-xs font-semibold text-rose-400 block mb-1">Damaged / Rejected Quantity:</label>
+                    <input type="number" id="modalDamagedInput" class="w-full bg-slate-950 border border-rose-900/60 rounded-xl px-4 py-2 text-rose-300 font-mono text-sm focus:outline-none focus:border-rose-500">
+                </div>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
@@ -503,77 +569,81 @@
         </div>
     </div>
 
-    <!-- Application Script (Integrated with Firebase Realtime Database) -->
+    <!-- Application Script -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // إعدادات Firebase الخاصة بمشروعك
-        const firebaseConfig = {
-            apiKey: "AIzaSyB09o7c511T_E5OXVCTPxQenkeEJHjAkw",
-            authDomain: "e7-group---packing-dashboard.firebaseapp.com",
-            projectId: "e7-group---packing-dashboard",
-            storageBucket: "e7-group---packing-dashboard.appspot.com",
-            messagingSenderId: "568097200607",
-            appId: "1:568097200607:web:e2018a35f8934abaaa4c0a",
-            measurementId: "G-XBEGSTY7SN",
-            databaseURL: "https://e7-group---packing-dashboard-default-rtdb.firebaseio.com"
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'e7-packing-dashboard';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-api-key",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:demo"
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Complete Grade Data Structure (G01 - G12)
+        // Complete Grade Data Structure (G01 - G12) with damaged items tracking
         window.packingData = [
-            { id: "G01", name: "G01", dne: 9479, ad: 12212, ajyal1: 0, ajyal2: 0, morningPacked: 3302, eveningPacked: 0 },
-            { id: "G02", name: "G02", dne: 9850, ad: 8544, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G03", name: "G03", dne: 9460, ad: 9214, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G04", name: "G04", dne: 8298, ad: 7535, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G05_GEN", name: "G05 (General)", dne: 11932, ad: 9237, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G05_ADV", name: "G05 (Advanced)", dne: 1628, ad: 173, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G06_GEN", name: "G06 (General)", dne: 12545, ad: 9691, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G06_ADV", name: "G06 (Advanced)", dne: 1782, ad: 191, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G07", name: "G07", dne: 11520, ad: 10450, ajyal1: 2500, ajyal2: 1200, morningPacked: 0, eveningPacked: 0 },
-            { id: "G08", name: "G08", dne: 11200, ad: 10100, ajyal1: 2300, ajyal2: 1100, morningPacked: 0, eveningPacked: 0 },
-            { id: "G09", name: "G09", dne: 10800, ad: 9800, ajyal1: 2100, ajyal2: 1000, morningPacked: 0, eveningPacked: 0 },
-            { id: "G10", name: "G10", dne: 10400, ad: 9400, ajyal1: 2000, ajyal2: 950, morningPacked: 0, eveningPacked: 0 },
-            { id: "G11", name: "G11", dne: 9900, ad: 8900, ajyal1: 1800, ajyal2: 900, morningPacked: 0, eveningPacked: 0 },
-            { id: "G12", name: "G12", dne: 9500, ad: 8500, ajyal1: 1700, ajyal2: 850, morningPacked: 0, eveningPacked: 0 }
+            { id: "G01", name: "G01", dne: 9479, ad: 12212, ajyal1: 0, ajyal2: 0, morningPacked: 3302, eveningPacked: 0, damagedQty: 0 },
+            { id: "G02", name: "G02", dne: 9850, ad: 8544, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G03", name: "G03", dne: 9460, ad: 9214, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G04", name: "G04", dne: 8298, ad: 7535, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G05_GEN", name: "G05 (General)", dne: 11932, ad: 9237, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G05_ADV", name: "G05 (Advanced)", dne: 1628, ad: 173, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G06_GEN", name: "G06 (General)", dne: 12545, ad: 9691, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G06_ADV", name: "G06 (Advanced)", dne: 1782, ad: 191, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G07", name: "G07", dne: 11520, ad: 10450, ajyal1: 2500, ajyal2: 1200, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G08", name: "G08", dne: 11200, ad: 10100, ajyal1: 2300, ajyal2: 1100, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G09", name: "G09", dne: 10800, ad: 9800, ajyal1: 2100, ajyal2: 1000, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G10", name: "G10", dne: 10400, ad: 9400, ajyal1: 2000, ajyal2: 950, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G11", name: "G11", dne: 9900, ad: 8900, ajyal1: 1800, ajyal2: 900, morningPacked: 0, eveningPacked: 0, damagedQty: 0 },
+            { id: "G12", name: "G12", dne: 9500, ad: 8500, ajyal1: 1700, ajyal2: 850, morningPacked: 0, eveningPacked: 0, damagedQty: 0 }
         ];
 
         window.historyLog = [];
+        window.handoverNotes = "";
         window.currentShift = 'morning';
         window.activeEditingId = null;
         let sectorChartInstance = null;
         let donutChartInstance = null;
-        let isCloudInitializing = true;
 
-        // Set default date input to today
         document.getElementById('quickLogDate').valueAsDate = new Date();
 
-        // Realtime Database Synchronization Listener
-        onValue(ref(db, 'dashboard/packingDataStateV2'), (snapshot) => {
-            const cloudData = snapshot.val();
-            if (cloudData) {
-                if (cloudData.grades) window.packingData = cloudData.grades;
-                if (cloudData.history) window.historyLog = cloudData.history;
-                renderDashboard();
-            } else if (isCloudInitializing) {
-                syncToCloud();
-            }
-            isCloudInitializing = false;
+        signInAnonymously(auth).then(() => {
             document.getElementById('cloudStatusText').innerText = "Cloud Live";
-            document.getElementById('cloudSyncDot').className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        }, (error) => {
-            console.error("Firebase sync error:", error);
+            const docRef = doc(db, "artifacts", appId, "public", "packingDataStateV4");
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    if (cloudData.grades) window.packingData = cloudData.grades;
+                    if (cloudData.history) window.historyLog = cloudData.history;
+                    if (cloudData.notes !== undefined) {
+                        window.handoverNotes = cloudData.notes;
+                        document.getElementById('handoverNotesText').value = cloudData.notes;
+                    }
+                    renderDashboard();
+                } else {
+                    syncToCloud();
+                }
+            });
+        }).catch(err => {
+            console.error("Auth error:", err);
             document.getElementById('cloudStatusText').innerText = "Offline Mode";
-            document.getElementById('cloudSyncDot').className = "w-2 h-2 rounded-full bg-rose-500";
         });
 
         window.syncToCloud = function() {
-            set(ref(db, 'dashboard/packingDataStateV2'), { 
+            const docRef = doc(db, "artifacts", appId, "public", "packingDataStateV4");
+            setDoc(docRef, { 
                 grades: window.packingData, 
                 history: window.historyLog, 
+                notes: window.handoverNotes,
                 updatedAt: new Date().toISOString() 
             }).catch(err => console.error("Sync error:", err));
         }
@@ -603,13 +673,14 @@
             historyBody.innerHTML = '';
 
             let totalDNE = 0, totalAD = 0, totalAjyal1 = 0, totalAjyal2 = 0;
-            let totalMorning = 0, totalEvening = 0, totalPackedAll = 0, grandTotalTarget = 0;
+            let totalMorning = 0, totalEvening = 0, totalPackedAll = 0, totalDamagedAll = 0, grandTotalTarget = 0;
 
             window.packingData.forEach(item => {
                 const target = item.dne + item.ad + item.ajyal1 + item.ajyal2;
                 const packed = item.morningPacked + item.eveningPacked;
                 const remaining = Math.max(0, target - packed);
                 const pct = target > 0 ? ((packed / target) * 100).toFixed(2) : "0.00";
+                const damaged = item.damagedQty || 0;
 
                 totalDNE += item.dne;
                 totalAD += item.ad;
@@ -618,6 +689,7 @@
                 totalMorning += item.morningPacked;
                 totalEvening += item.eveningPacked;
                 totalPackedAll += packed;
+                totalDamagedAll += damaged;
                 grandTotalTarget += target;
 
                 const opt = document.createElement('option');
@@ -636,6 +708,7 @@
                     <td class="p-3.5 text-center font-bold text-cyan-300">${target.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-amber-400">${item.morningPacked.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-indigo-400">${item.eveningPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-rose-400 font-bold">${damaged.toLocaleString()}</td>
                     <td class="p-3.5 text-center font-bold text-emerald-400">${packed.toLocaleString()}</td>
                     <td class="p-3.5 text-center text-amber-400 font-semibold">${remaining.toLocaleString()}</td>
                     <td class="p-3.5 text-center">
@@ -654,7 +727,7 @@
 
             // Render History Log
             if (window.historyLog.length === 0) {
-                historyBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No shift production entries recorded yet.</td></tr>`;
+                historyBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No shift production entries recorded yet.</td></tr>`;
             } else {
                 window.historyLog.slice().reverse().forEach(log => {
                     const htr = document.createElement('tr');
@@ -668,6 +741,7 @@
                         <td class="p-3">${shiftBadge}</td>
                         <td class="p-3 font-bold text-white font-sans">${log.gradeName}</td>
                         <td class="p-3 text-center font-bold text-emerald-400">+${log.qty.toLocaleString()}</td>
+                        <td class="p-3 text-center font-bold text-rose-400">${log.damaged || 0}</td>
                         <td class="p-3 text-center font-bold text-cyan-300">${log.workforceCount} Workers</td>
                     `;
                     historyBody.appendChild(htr);
@@ -682,6 +756,7 @@
             document.getElementById('footTotal').innerText = grandTotalTarget.toLocaleString();
             document.getElementById('footMorning').innerText = totalMorning.toLocaleString();
             document.getElementById('footEvening').innerText = totalEvening.toLocaleString();
+            document.getElementById('footDamaged').innerText = totalDamagedAll.toLocaleString();
             document.getElementById('footPacked').innerText = totalPackedAll.toLocaleString();
             document.getElementById('footRemaining').innerText = (grandTotalTarget - totalPackedAll).toLocaleString();
             
@@ -698,9 +773,18 @@
             document.getElementById('kpiRemainingVal').innerText = remVal.toLocaleString();
             document.getElementById('kpiRemainingPct').innerText = remPct + "%";
             document.getElementById('remainingProgressBar').style.width = remPct + "%";
+            document.getElementById('kpiDamagedVal').innerText = totalDamagedAll.toLocaleString();
 
             document.getElementById('morningShiftTotalDisplay').innerText = totalMorning.toLocaleString();
             document.getElementById('eveningShiftTotalDisplay').innerText = totalEvening.toLocaleString();
+
+            // Calculate Efficiency Metrics
+            const morningStaff = parseInt(document.getElementById('morningStaffInput').value) || 1;
+            const eveningStaff = parseInt(document.getElementById('eveningStaffInput').value) || 1;
+            const morningRate = (totalMorning / (morningStaff * 12)).toFixed(1);
+            const eveningRate = (totalEvening / (eveningStaff * 12)).toFixed(1);
+            document.getElementById('morningRateVal').innerText = `${morningRate} Pcs/Worker/Hr`;
+            document.getElementById('eveningRateVal').innerText = `${eveningRate} Pcs/Worker/Hr`;
 
             lucide.createIcons();
             updateCharts(totalDNE, totalAD, totalAjyal1, totalAjyal2, totalPackedAll, remVal);
@@ -710,7 +794,9 @@
             const dateVal = document.getElementById('quickLogDate').value || new Date().toISOString().split('T')[0];
             const gradeId = document.getElementById('quickSelectGrade').value;
             const val = parseInt(document.getElementById('quickPackedValue').value) || 0;
-            if (val <= 0) return;
+            const damagedVal = parseInt(document.getElementById('quickDamagedValue').value) || 0;
+
+            if (val <= 0 && damagedVal <= 0) return;
 
             const item = window.packingData.find(g => g.id === gradeId);
             if (item) {
@@ -723,6 +809,7 @@
                 } else {
                     item.eveningPacked += val;
                 }
+                item.damagedQty = (item.damagedQty || 0) + damagedVal;
 
                 window.historyLog.push({
                     date: dateVal,
@@ -730,13 +817,20 @@
                     gradeId: item.id,
                     gradeName: item.name,
                     qty: val,
+                    damaged: damagedVal,
                     workforceCount: workforce
                 });
 
                 syncToCloud();
                 renderDashboard();
                 document.getElementById('quickPackedValue').value = '';
+                document.getElementById('quickDamagedValue').value = '';
             }
+        }
+
+        window.saveHandoverNotes = function() {
+            window.handoverNotes = document.getElementById('handoverNotesText').value;
+            syncToCloud();
         }
 
         window.clearHistoryLog = function() {
@@ -754,6 +848,7 @@
                 document.getElementById('modalGradeName').innerText = item.name;
                 document.getElementById('modalMorningInput').value = item.morningPacked;
                 document.getElementById('modalEveningInput').value = item.eveningPacked;
+                document.getElementById('modalDamagedInput').value = item.damagedQty || 0;
                 document.getElementById('updateModal').classList.remove('hidden');
             }
         }
@@ -769,6 +864,7 @@
             if (item) {
                 item.morningPacked = parseInt(document.getElementById('modalMorningInput').value) || 0;
                 item.eveningPacked = parseInt(document.getElementById('modalEveningInput').value) || 0;
+                item.damagedQty = parseInt(document.getElementById('modalDamagedInput').value) || 0;
                 syncToCloud();
                 renderDashboard();
             }
@@ -785,13 +881,13 @@
         }
 
         window.exportData = function() {
-            let csv = "Grade,MOE-DNE,MOE-AD,Ajyal-1,Ajyal-2,Total Target,Morning Packed,Evening Packed,Total Packed,Remaining,Progress %\n";
+            let csv = "Grade,MOE-DNE,MOE-AD,Ajyal-1,Ajyal-2,Total Target,Morning Packed,Evening Packed,Damaged,Total Packed,Remaining,Progress %\n";
             window.packingData.forEach(item => {
                 const target = item.dne + item.ad + item.ajyal1 + item.ajyal2;
                 const packed = item.morningPacked + item.eveningPacked;
                 const rem = target - packed;
                 const pct = target > 0 ? ((packed / target) * 100).toFixed(2) : "0.00";
-                csv += `"${item.name}",${item.dne},${item.ad},${item.ajyal1},${item.ajyal2},${target},${item.morningPacked},${item.eveningPacked},${packed},${rem},${pct}%\n`;
+                csv += `"${item.name}",${item.dne},${item.ad},${item.ajyal1},${item.ajyal2},${target},${item.morningPacked},${item.eveningPacked},${item.damagedQty || 0},${packed},${rem},${pct}%\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -885,6 +981,7 @@
         }
 
         setInterval(updateClockAndCountdown, 1000);
+        renderDashboard();
     </script>
 </body>
 </html>
