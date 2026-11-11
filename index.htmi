@@ -1,104 +1,398 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="en" dir="ltr" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>E7 Group - لوحة التحكم السحابية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E7 Group - Packing & Logistics Dashboard (Term 2 2026/2027)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-[#0b132b] text-slate-100 p-4 font-sans min-h-screen">
-    <header class="mb-6 p-4 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
-        <h1 class="text-lg font-bold text-cyan-400">لوحة تحكم التعبئة والتوزيع (E7 Group)</h1>
-        <span id="syncStatus" class="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">متصل بالسحاب 🟢</span>
-    </header>
-
-    <main class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-            <p class="text-xs text-slate-400">المستهدف الكلي</p>
-            <h3 id="targetVal" class="text-2xl font-bold">269,818</h3>
-        </div>
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-            <p class="text-xs text-slate-400">المعبأ حالياً</p>
-            <h3 id="packedVal" class="text-2xl font-bold text-emerald-400">0</h3>
-        </div>
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-            <p class="text-xs text-slate-400">المتبقي للتعبئة</p>
-            <h3 id="remVal" class="text-2xl font-bold text-amber-400">0</h3>
-        </div>
-    </main>
-
-    <section class="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-6">
-        <div class="flex gap-2 mb-4">
-            <select id="gradeSelect" class="bg-slate-950 p-2 rounded border border-slate-700 text-xs text-white"></select>
-            <input id="qtyInput" type="number" placeholder="الكمية..." class="bg-slate-950 p-2 rounded border border-slate-700 text-xs text-emerald-400 w-24">
-            <button onclick="logData()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded text-xs font-bold text-white transition-all">تسجيل</button>
-        </div>
-        <table class="w-full text-xs text-right">
-            <thead><tr class="border-b border-slate-800 text-slate-400"><th class="p-2">الصف</th><th class="p-2">المستهدف</th><th class="p-2">المعبأ</th></tr></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </section>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY", // ضع مفتاح مشروعك الحقيقي
-            authDomain: "e7-group---packing-dashboard.firebaseapp.com",
-            databaseURL: "https://e7-group---packing-dashboard-default-rtdb.firebaseio.com",
-            projectId: "e7-group---packing-dashboard"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const dbRef = ref(db, 'packingState/main');
-
-        window.packingData = JSON.parse(localStorage.getItem('e7_data')) || [
-            { id: "G01", name: "G01", target: 21691, packed: 3302 },
-            { id: "G02", name: "G02", target: 18394, packed: 0 },
-            { id: "G03", name: "G03", target: 18674, packed: 0 }
-        ];
-
-        window.logData = async () => {
-            const id = document.getElementById('gradeSelect').value;
-            const qty = parseInt(document.getElementById('qtyInput').value) || 0;
-            const row = window.packingData.find(r => r.id === id);
-            if (row && qty > 0) {
-                row.packed += qty;
-                updateUI();
-                try {
-                    await set(dbRef, window.packingData);
-                } catch {
-                    localStorage.setItem('e7_data', JSON.stringify(window.packingData));
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        e7navy: '#0B132B',
+                        e7dark: '#1C2541',
+                        e7blue: '#3A506B',
+                        e7cyan: '#48CAE4',
+                        e7gold: '#FFB703',
+                        e7green: '#06D6A0',
+                        e7red: '#EF476F'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'sans-serif']
+                    }
                 }
             }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Firebase Configuration (Replace with your project credentials)
+        const firebaseConfig = {
+            apiKey: "AIzaSyYourApiKeyHere",
+            authDomain: "e7-group-packing-dashboard.firebaseapp.com",
+            databaseURL: "https://e7-group-packing-dashboard-default-rtdb.firebaseio.com",
+            projectId: "e7-group-packing-dashboard",
+            storageBucket: "e7-group-packing-dashboard.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
         };
 
-        onValue(dbRef, (snap) => {
-            if (snap.exists()) {
-                window.packingData = snap.val();
-                localStorage.setItem('e7_data', JSON.stringify(window.packingData));
-                updateUI();
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.saveCloudData = function(key, value) {
+            const dbRef = ref(db, 'dashboard/' + key);
+            set(dbRef, value).then(() => {
+                console.log("Data saved to cloud successfully!");
+            }).catch((error) => {
+                console.error("Error saving data: ", error);
+            });
+        };
+
+        // Listen for live cloud updates
+        const dashboardRef = ref(db, 'dashboard/');
+        onValue(dashboardRef, (snapshot) => {
+            const data = snapshot.val();
+            const dot = document.getElementById('cloudSyncDot');
+            const txt = document.getElementById('cloudStatusText');
+            if (data) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                txt.textContent = "Cloud Live (Connected)";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+                txt.textContent = "Connecting to Cloud...";
             }
         });
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b132b; color: #f1f5f9; }
+        .glass-panel { background: rgba(28, 37, 65, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: linear-gradient(135deg, rgba(30, 41, 70, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(255, 255, 255, 0.07); }
+        .glow-cyan { box-shadow: 0 0 25px -5px rgba(72, 202, 228, 0.3); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(72, 202, 228, 0.3); border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased custom-scrollbar">
 
-        function updateUI() {
-            let totalTarget = 0, totalPacked = 0;
-            const tbody = document.getElementById('tableBody');
-            const select = document.getElementById('gradeSelect');
-            tbody.innerHTML = ''; select.innerHTML = '';
+    <!-- Top Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-700/50 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg">
+                        E7
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-bold text-lg lg:text-xl tracking-tight text-white">
+                                E7 Group - Packing & Logistics Dashboard
+                            </h1>
+                            <span class="px-2 py-0.5 text-xs font-bold bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30">
+                                Term 2 (2026/2027)
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">Warehouse Operations, Textbook Distribution & Exam Security Control</p>
+                    </div>
+                </div>
+            </div>
 
-            window.packingData.forEach(row => {
-                totalTarget += row.target;
-                totalPacked += row.packed;
-                tbody.innerHTML += `<tr class="border-b border-slate-800/40"><td class="p-2">${row.name}</td><td class="p-2">${row.target.toLocaleString()}</td><td class="p-2 text-emerald-400 font-bold">${row.packed.toLocaleString()}</td></tr>`;
-                select.innerHTML += `<option value="${row.id}">${row.name}</option>`;
+            <!-- Live Clock & Cloud Status -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end overflow-x-auto">
+                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="cloudSyncDot"></span>
+                    <span class="text-emerald-300 font-semibold" id="cloudStatusText">Connecting...</span>
+                </div>
+
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-xs font-mono">
+                    <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+                    <span id="liveTimeText" class="text-slate-200 font-semibold">--:--:--</span>
+                    <span class="text-slate-500">|</span>
+                    <span id="liveDateText" class="text-slate-400">--/--/----</span>
+                    <span id="sundayIndicator" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                        Sunday Holiday 🏖️
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+        <!-- Precision Countdown & Shift Controls -->
+        <section class="glass-card rounded-2xl p-4 lg:p-6 border border-cyan-500/20 glow-cyan relative overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <div class="lg:col-span-5 space-y-3 border-b lg:border-b-0 lg:border-r border-slate-700/50 pb-4 lg:pb-0 lg:pr-6">
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                        <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                            <i data-lucide="hourglass" class="w-4 h-4 text-cyan-400"></i>
+                            <span>Net Workable Days (Excl. Sundays)</span>
+                        </span>
+                        <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                            Target: Dec 06, 2026
+                        </span>
+                    </div>
+
+                    <div class="flex items-baseline gap-3">
+                        <div class="text-4xl lg:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400" id="fractionalDaysCount">
+                            20.48
+                        </div>
+                        <div class="text-lg font-bold text-slate-300">Days Remaining</div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-slate-200 text-sm" id="hoursCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Hours</div>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-slate-200 text-sm" id="minutesCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Minutes</div>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div class="font-mono font-bold text-cyan-400 text-sm" id="secondsCount">00</div>
+                            <div class="text-slate-400 text-[10px]">Seconds</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shift Controller & Workforce Management -->
+                <div class="lg:col-span-7 space-y-4">
+                    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                        <span>Shift Time Controls & Separate Workforce (07:00 ⇄ 19:00)</span>
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <label class="text-xs text-slate-400 block font-semibold">Active Logging Shift:</label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="setShift('morning')" id="btnMorningShift" class="px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300">
+                                    <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
+                                    <span>Morning (07-19)</span>
+                                </button>
+                                <button onclick="setShift('evening')" id="btnEveningShift" class="px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300">
+                                    <i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                    <span>Evening (19-07)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <label class="text-xs text-slate-400 block font-semibold">Workforce Count per Shift:</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span class="text-[10px] text-amber-400 block">Morning Staff</span>
+                                    <input type="number" id="morningStaffInput" value="45" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-indigo-400 block">Evening Staff</span>
+                                    <input type="number" id="eveningStaffInput" value="40" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-mono font-bold">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Machinery & Hardware Status Bar -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Online (4 / 4 Units)</span>
+                    </div>
+                </div>
+                <i data-lucide="printer" class="w-6 h-6 text-slate-500"></i>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Honeywell Scanners</div>
+                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Active (12 Scanners)</span>
+                    </div>
+                </div>
+                <i data-lucide="qr-code" class="w-6 h-6 text-slate-500"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Canon C3830i Printer</div>
+                    <div class="text-sm font-bold text-emerald-400 font-mono mt-0.5">IP: 10.1.7.55</div>
+                </div>
+                <i data-lucide="network" class="w-6 h-6 text-emerald-400"></i>
+            </div>
+
+            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Cloud Sync</div>
+                    <div class="text-sm font-bold text-cyan-400 font-mono mt-0.5">Firebase RTDB</div>
+                </div>
+                <i data-lucide="cloud-cog" class="w-6 h-6 text-cyan-400"></i>
+            </div>
+        </section>
+
+        <!-- Executive KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Total Targeted Students</span>
+                    <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
+                </div>
+                <div class="text-3xl font-black font-mono text-white mb-1">269,818</div>
+                <div class="text-xs text-slate-400">All Grades (G01 - G12)</div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Packed To Date</span>
+                    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                </div>
+                <div class="text-3xl font-black font-mono text-emerald-400 mb-1" id="kpiPackedVal">3,302</div>
+                <div class="text-xs text-emerald-500 font-mono">Completion Rate: 1.22%</div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Remaining Balance</span>
+                    <i data-lucide="package-search" class="w-5 h-5 text-amber-400"></i>
+                </div>
+                <div class="text-3xl font-black font-mono text-amber-400 mb-1" id="kpiRemainingVal">266,516</div>
+                <div class="text-xs text-amber-400 font-mono">98.78% Remaining</div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
+                <div class="flex items-center justify-between text-slate-400 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider">Damaged / Rejected</span>
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+                </div>
+                <div class="text-3xl font-black font-mono text-rose-400 mb-1">0</div>
+                <div class="text-xs text-rose-400">QA Inspection Flag</div>
+            </div>
+        </section>
+
+        <!-- Charts Grid Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5 border border-slate-700/60">
+                <h3 class="font-bold text-slate-100 text-base mb-4 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>
+                    <span>Student Distribution by Sector (G01 - G12)</span>
+                </h3>
+                <div class="h-64 relative w-full">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5 border border-slate-700/60">
+                <h3 class="font-bold text-slate-100 text-base mb-4 flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-5 h-5 text-amber-400"></i>
+                    <span>Sector Volume Breakdown</span>
+                </h3>
+                <div class="h-64 relative w-full flex items-center justify-center">
+                    <canvas id="statusDonutChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let activeShift = 'morning';
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setInterval(updateClock, 1000);
+            initCharts();
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveTimeText').textContent = now.toLocaleTimeString('en-GB');
+            document.getElementById('liveDateText').textContent = now.toLocaleDateString('en-GB');
+            if (now.getDay() === 0) {
+                document.getElementById('sundayIndicator').classList.remove('hidden');
+            } else {
+                document.getElementById('sundayIndicator').classList.add('hidden');
+            }
+        }
+
+        function setShift(shift) {
+            activeShift = shift;
+            const btnM = document.getElementById('btnMorningShift');
+            const btnE = document.getElementById('btnEveningShift');
+            if (shift === 'morning') {
+                btnM.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300';
+                btnE.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300';
+            } else {
+                btnE.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-indigo-500/50 bg-indigo-500/20 text-indigo-300';
+                btnM.className = 'px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300';
+            }
+        }
+
+        function initCharts() {
+            const ctxSector = document.getElementById('sectorChart').getContext('2d');
+            new Chart(ctxSector, {
+                type: 'bar',
+                data: {
+                    labels: ['Grade 01', 'Grade 02', 'Grade 03', 'Grade 04', 'Grade 05', 'Grade 06', 'Grade 07', 'Grade 08', 'Grade 09', 'Grade 10', 'Grade 11', 'Grade 12'],
+                    datasets: [{
+                        label: 'Total Target',
+                        data: [27240, 26200, 28000, 25700, 27200, 26500, 25100, 26460, 24750, 26100, 24200, 23500],
+                        backgroundColor: 'rgba(72, 202, 228, 0.4)',
+                        borderColor: '#48CAE4',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }, {
+                        label: 'Total Packed',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 3302, 0, 0],
+                        backgroundColor: '#06D6A0',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1' } } }
+                }
             });
 
-            document.getElementById('targetVal').textContent = totalTarget.toLocaleString();
-            document.getElementById('packedVal').textContent = totalPacked.toLocaleString();
-            document.getElementById('remVal').textContent = (totalTarget - totalPacked).toLocaleString();
+            const ctxDonut = document.getElementById('statusDonutChart').getContext('2d');
+            new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
+                    datasets: [{
+                        data: [121000, 95000, 31818, 22000],
+                        backgroundColor: ['#48CAE4', '#3A506B', '#FFB703', '#06D6A0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
+                }
+            });
         }
-        updateUI();
     </script>
 </body>
 </html>
