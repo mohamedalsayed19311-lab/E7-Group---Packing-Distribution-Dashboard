@@ -38,26 +38,27 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Firebase Configuration (Replace with your project credentials)
+        // Your Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyYourApiKeyHere",
-            authDomain: "e7-group-packing-dashboard.firebaseapp.com",
-            databaseURL: "https://e7-group-packing-dashboard-default-rtdb.firebaseio.com",
-            projectId: "e7-group-packing-dashboard",
-            storageBucket: "e7-group-packing-dashboard.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
+            apiKey: "AIzaSyAA-j54dJzpth691_NRYT9Vn9mFcThDMWI",
+            authDomain: "packing-logistics-dashboard.firebaseapp.com",
+            databaseURL: "https://packing-logistics-dashboard-default-rtdb.firebaseio.com",
+            projectId: "packing-logistics-dashboard",
+            storageBucket: "packing-logistics-dashboard.firebasestorage.app",
+            messagingSenderId: "825185014596",
+            appId: "1:825185014596:web:39b99cdef4a567ca5abd11"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.saveCloudData = function(key, value) {
-            const dbRef = ref(db, 'dashboard/' + key);
+        // Global save function to sync data with Firebase
+        window.saveCloudData = function(path, value) {
+            const dbRef = ref(db, 'dashboard/' + path);
             set(dbRef, value).then(() => {
-                console.log("Data saved to cloud successfully!");
+                console.log("Data synced to cloud successfully!");
             }).catch((error) => {
-                console.error("Error saving data: ", error);
+                console.error("Error syncing data: ", error);
             });
         };
 
@@ -71,9 +72,15 @@
                 dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
                 txt.textContent = "Cloud Live (Connected)";
             } else {
-                dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
-                txt.textContent = "Connecting to Cloud...";
+                dot.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
+                txt.textContent = "Cloud Connected (Ready)";
             }
+        }, (error) => {
+            const dot = document.getElementById('cloudSyncDot');
+            const txt = document.getElementById('cloudStatusText');
+            dot.className = "w-2 h-2 rounded-full bg-rose-500";
+            txt.textContent = "Cloud Connection Error";
+            console.error("Firebase connection error:", error);
         });
     </script>
     <style>
@@ -210,47 +217,6 @@
             </div>
         </section>
 
-        <!-- Machinery & Hardware Status Bar -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
-                <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
-                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Online (4 / 4 Units)</span>
-                    </div>
-                </div>
-                <i data-lucide="printer" class="w-6 h-6 text-slate-500"></i>
-            </div>
-            
-            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
-                <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400">Honeywell Scanners</div>
-                    <div class="text-sm font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Active (12 Scanners)</span>
-                    </div>
-                </div>
-                <i data-lucide="qr-code" class="w-6 h-6 text-slate-500"></i>
-            </div>
-
-            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
-                <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400">Canon C3830i Printer</div>
-                    <div class="text-sm font-bold text-emerald-400 font-mono mt-0.5">IP: 10.1.7.55</div>
-                </div>
-                <i data-lucide="network" class="w-6 h-6 text-emerald-400"></i>
-            </div>
-
-            <div class="glass-card rounded-2xl p-4 border border-slate-700/60 flex items-center justify-between">
-                <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400">Cloud Sync</div>
-                    <div class="text-sm font-bold text-cyan-400 font-mono mt-0.5">Firebase RTDB</div>
-                </div>
-                <i data-lucide="cloud-cog" class="w-6 h-6 text-cyan-400"></i>
-            </div>
-        </section>
-
         <!-- Executive KPI Cards Grid -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
@@ -258,7 +224,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider">Total Targeted Students</span>
                     <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
                 </div>
-                <div class="text-3xl font-black font-mono text-white mb-1">269,818</div>
+                <div class="text-3xl font-black font-mono text-white mb-1" id="kpiTotalTarget">269,818</div>
                 <div class="text-xs text-slate-400">All Grades (G01 - G12)</div>
             </div>
 
@@ -268,7 +234,7 @@
                     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
                 </div>
                 <div class="text-3xl font-black font-mono text-emerald-400 mb-1" id="kpiPackedVal">3,302</div>
-                <div class="text-xs text-emerald-500 font-mono">Completion Rate: 1.22%</div>
+                <div class="text-xs text-emerald-500 font-mono" id="kpiPackedPct">Completion Rate: 1.22%</div>
             </div>
 
             <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
@@ -285,8 +251,43 @@
                     <span class="text-xs font-bold uppercase tracking-wider">Damaged / Rejected</span>
                     <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
                 </div>
-                <div class="text-3xl font-black font-mono text-rose-400 mb-1">0</div>
+                <div class="text-3xl font-black font-mono text-rose-400 mb-1" id="kpiDamagedVal">0</div>
                 <div class="text-xs text-rose-400">QA Inspection Flag</div>
+            </div>
+        </section>
+
+        <!-- Detailed Packing Plan Table (G01 - G12) -->
+        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden">
+            <div class="p-5 border-b border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                        <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Packing Plan Detailed Breakdown (Grades G01 - G12)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Term 2 2026/2027 Master Matrix with Shift Tracking</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                        <tr>
+                            <th class="p-3.5">Grade</th>
+                            <th class="p-3.5 text-center">MOE-DNE</th>
+                            <th class="p-3.5 text-center">MOE-AD</th>
+                            <th class="p-3.5 text-center">Ajyal-1</th>
+                            <th class="p-3.5 text-center">Ajyal-2</th>
+                            <th class="p-3.5 text-center text-cyan-300">Total Target</th>
+                            <th class="p-3.5 text-center text-amber-300">Morning</th>
+                            <th class="p-3.5 text-center text-indigo-300">Evening</th>
+                            <th class="p-3.5 text-center text-rose-400">Damaged</th>
+                            <th class="p-3.5 text-center text-emerald-400">Total Packed</th>
+                            <th class="p-3.5 text-center text-amber-400">Remaining</th>
+                            <th class="p-3.5 text-center">Progress %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packingTableBody" class="divide-y divide-slate-800/60 font-mono">
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -315,13 +316,33 @@
 
     </main>
 
-    <!-- JavaScript Logic -->
+    <!-- JavaScript Logic & Master Data -->
     <script>
+        let packingData = [
+            { grade: 'Grade 01', dne: 10540, ad: 11200, ajyal1: 3100, ajyal2: 2400, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 02', dne: 10200, ad: 10900, ajyal1: 2900, ajyal2: 2200, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 03', dne: 10800, ad: 11500, ajyal1: 3200, ajyal2: 2500, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 04', dne: 10100, ad: 10700, ajyal1: 2800, ajyal2: 2100, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 05', dne: 10600, ad: 11300, ajyal1: 3000, ajyal2: 2300, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 06', dne: 10300, ad: 11000, ajyal1: 2950, ajyal2: 2250, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 07', dne: 9900,  ad: 10500, ajyal1: 2700, ajyal2: 2000, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 08', dne: 10400, ad: 11100, ajyal1: 2850, ajyal2: 2150, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 09', dne: 9800,  ad: 10400, ajyal1: 2650, ajyal2: 1950, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 10', dne: 10150, ad: 10850, ajyal1: 2900, ajyal2: 2200, morning: 1500, evening: 1802, damaged: 0 },
+            { grade: 'Grade 11', dne: 9600,  ad: 10200, ajyal1: 2500, ajyal2: 1800, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 12', dne: 9400,  ad: 10000, ajyal1: 2400, ajyal2: 1700, morning: 0, evening: 0, damaged: 0 }
+        ];
+
         let activeShift = 'morning';
+        let sectorChartInstance = null;
+        let statusDonutInstance = null;
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             setInterval(updateClock, 1000);
+            renderTable();
             initCharts();
+            updateKPIs();
         });
 
         function updateClock() {
@@ -348,43 +369,94 @@
             }
         }
 
+        function renderTable() {
+            const tbody = document.getElementById('packingTableBody');
+            tbody.innerHTML = '';
+            packingData.forEach(row => {
+                const totalTarget = row.dne + row.ad + row.ajyal1 + row.ajyal2;
+                const totalPacked = row.morning + row.evening;
+                const remaining = Math.max(0, totalTarget - totalPacked);
+                const pct = totalTarget > 0 ? ((totalPacked / totalTarget) * 100).toFixed(2) : '0.00';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-3.5 font-sans font-bold text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span>${row.grade}</span>
+                    </td>
+                    <td class="p-3.5 text-center text-slate-300">${row.dne.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ad.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ajyal1.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${row.ajyal2.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-cyan-400">${totalTarget.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-amber-400 font-semibold">${row.morning.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-indigo-400 font-semibold">${row.evening.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-rose-400">${row.damaged > 0 ? row.damaged.toLocaleString() : '0'}</td>
+                    <td class="p-3.5 text-center text-emerald-400 font-bold">${totalPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-amber-400">${remaining.toLocaleString()}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold ${parseFloat(pct) > 5 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+                            ${pct}%
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateKPIs() {
+            let totalTarget = 0, totalPacked = 0;
+            packingData.forEach(row => {
+                totalTarget += (row.dne + row.ad + row.ajyal1 + row.ajyal2);
+                totalPacked += (row.morning + row.evening);
+            });
+            const remaining = Math.max(0, totalTarget - totalPacked);
+            const pct = totalTarget > 0 ? ((totalPacked / totalTarget) * 100).toFixed(2) : '0.00';
+
+            document.getElementById('kpiTotalTarget').textContent = totalTarget.toLocaleString();
+            document.getElementById('kpiPackedVal').textContent = totalPacked.toLocaleString();
+            document.getElementById('kpiPackedPct').textContent = `Completion Rate: ${pct}%`;
+            document.getElementById('kpiRemainingVal').textContent = remaining.toLocaleString();
+        }
+
         function initCharts() {
             const ctxSector = document.getElementById('sectorChart').getContext('2d');
-            new Chart(ctxSector, {
+            const labels = packingData.map(d => d.grade);
+            const targets = packingData.map(d => d.dne + d.ad + d.ajyal1 + d.ajyal2);
+            const packed = packingData.map(d => d.morning + d.evening);
+
+            sectorChartInstance = new Chart(ctxSector, {
                 type: 'bar',
                 data: {
-                    labels: ['Grade 01', 'Grade 02', 'Grade 03', 'Grade 04', 'Grade 05', 'Grade 06', 'Grade 07', 'Grade 08', 'Grade 09', 'Grade 10', 'Grade 11', 'Grade 12'],
-                    datasets: [{
-                        label: 'Total Target',
-                        data: [27240, 26200, 28000, 25700, 27200, 26500, 25100, 26460, 24750, 26100, 24200, 23500],
-                        backgroundColor: 'rgba(72, 202, 228, 0.4)',
-                        borderColor: '#48CAE4',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    }, {
-                        label: 'Total Packed',
-                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 3302, 0, 0],
-                        backgroundColor: '#06D6A0',
-                        borderRadius: 6
-                    }]
+                    labels: labels,
+                    datasets: [
+                        { label: 'Total Target', data: targets, backgroundColor: 'rgba(72, 202, 228, 0.4)', borderColor: '#48CAE4', borderWidth: 1, borderRadius: 6 },
+                        { label: 'Total Packed', data: packed, backgroundColor: '#06D6A0', borderRadius: 6 }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1' } } }
+                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
                 }
             });
 
             const ctxDonut = document.getElementById('statusDonutChart').getContext('2d');
-            new Chart(ctxDonut, {
+            let sumDNE = 0, sumAD = 0, sumAjyal1 = 0, sumAjyal2 = 0;
+            packingData.forEach(d => {
+                sumDNE += d.dne; sumAD += d.ad; sumAjyal1 += d.ajyal1; sumAjyal2 += d.ajyal2;
+            });
+
+            statusDonutInstance = new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
                     labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
-                    datasets: [{
-                        data: [121000, 95000, 31818, 22000],
-                        backgroundColor: ['#48CAE4', '#3A506B', '#FFB703', '#06D6A0'],
-                        borderWidth: 0
-                    }]
+                    datasets: [{ data: [sumDNE, sumAD, sumAjyal1, sumAjyal2], backgroundColor: ['#48CAE4', '#3A506B', '#FFB703', '#06D6A0'], borderWidth: 0 }]
                 },
                 options: {
                     responsive: true,
