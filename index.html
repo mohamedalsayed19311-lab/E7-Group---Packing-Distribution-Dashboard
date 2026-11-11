@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- منع التخزين المؤقت لضمان ظهور التحديثات فوراً لجميع المستخدمين -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>E7 Group - Packing & Logistics Dashboard (Term 2 2026/2027)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +39,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   <!-- Firebase SDKs & Live Sync -->
+    <!-- Firebase SDKs & Live Sync -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -51,7 +57,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // دالة عامة لحفظ البيانات في السحابة لتر the updates لجميع المستخدمين
         window.saveCloudData = function(path, value) {
             const dbRef = ref(db, 'dashboard/' + path);
             set(dbRef, value).then(() => {
@@ -61,20 +66,16 @@
             });
         };
 
-        // الاستماع الفوري للتحديثات السحابية وتحديث الجدول والرسوم البيانية تلقائياً
         const dashboardRef = ref(db, 'dashboard/');
         onValue(dashboardRef, (snapshot) => {
             const data = snapshot.val();
             const dot = document.getElementById('cloudSyncDot');
             const txt = document.getElementById('cloudStatusText');
-            
             if (data) {
                 if (dot && txt) {
                     dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
                     txt.textContent = "Cloud Live (Connected)";
                 }
-                
-                // تحديث بيانات التعبئة محلياً فور وصولها من السحابة
                 if (data.packingData && typeof window.updateDataFromCloud === 'function') {
                     window.updateDataFromCloud(data.packingData);
                 }
@@ -465,7 +466,7 @@
                         </h3>
                         <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-mono">Auto-Save</span>
                     </div>
-                    <textarea id="handoverNotesInput" oninput="saveHandoverNotes()" placeholder="Type shift handover notes here (e.g., Zebra ZT510 media sensor calibrated)..." class="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 custom-scrollbar resize-none"></textarea>
+                    <textarea id="handoverNotesInput" oninput="saveHandoverNotes()" placeholder="Type shift handover notes here..." class="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 custom-scrollbar resize-none"></textarea>
                 </div>
                 <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
                     <span id="notesSavedStatus">Changes saved locally</span>
@@ -513,18 +514,32 @@
         });
 
         function initLocalStorage() {
-            const savedData = localStorage.getItem('e7_packing_data');
-            if (savedData) { try { packingData = JSON.parse(savedData); } catch(e) {} }
-            const savedHistory = localStorage.getItem('e7_history_log');
-            if (savedHistory) { try { historyLog = JSON.parse(savedHistory); } catch(e) {} }
             const savedNotes = localStorage.getItem('e7_handover_notes');
             if (savedNotes) document.getElementById('handoverNotesInput').value = savedNotes;
             document.getElementById('quickLogDate').value = new Date().toISOString().split('T')[0];
         }
 
+        // دالة تحديث البيانات القادمة من سحابة Firebase تلقائياً
+        window.updateDataFromCloud = function(cloudData) {
+            if (Array.isArray(cloudData)) {
+                packingData = cloudData;
+                renderAll();
+                updateCharts();
+            }
+        };
+
+        window.updateHistoryFromCloud = function(cloudHistory) {
+            if (Array.isArray(cloudHistory)) {
+                historyLog = cloudHistory;
+                renderHistoryTable();
+            }
+        };
+
         function persistState() {
-            localStorage.setItem('e7_packing_data', JSON.stringify(packingData));
-            localStorage.setItem('e7_history_log', JSON.stringify(historyLog));
+            if (typeof window.saveCloudData === 'function') {
+                window.saveCloudData('packingData', packingData);
+                window.saveCloudData('historyLog', historyLog);
+            }
         }
 
         function saveHandoverNotes() {
@@ -584,7 +599,7 @@
 
         function submitQuickEntry() {
             const date = document.getElementById('quickLogDate').value;
-            const grade = document.getElementById('quickSelectGrade').value;
+            const selectedGrade = document.getElementById('quickSelectGrade').value;
             const packed = parseInt(document.getElementById('quickPackedValue').value) || 0;
             const damaged = parseInt(document.getElementById('quickDamagedValue').value) || 0;
 
@@ -593,18 +608,21 @@
                 return;
             }
 
-            const item = packingData.find(d => d.grade === grade);
+            const item = packingData.find(d => d.grade.trim().toLowerCase() === selectedGrade.trim().toLowerCase());
             if (item) {
                 if (activeShift === 'morning') item.morning += packed;
                 else item.evening += packed;
                 item.damaged += damaged;
+            } else {
+                alert('Selected grade not found.');
+                return;
             }
 
             const workforce = activeShift === 'morning' ? parseInt(document.getElementById('morningStaffInput').value) || 45 : parseInt(document.getElementById('eveningStaffInput').value) || 40;
             historyLog.unshift({
                 date: date || new Date().toISOString().split('T')[0],
                 shift: activeShift === 'morning' ? 'Morning Shift' : 'Evening Shift',
-                grade: grade, packed: packed, damaged: damaged, workforce: workforce
+                grade: item.grade, packed: packed, damaged: damaged, workforce: workforce
             });
 
             persistState();
