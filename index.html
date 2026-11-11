@@ -57,6 +57,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // حفظ البيانات في السحابة
         window.saveCloudData = function(path, value) {
             const dbRef = ref(db, 'dashboard/' + path);
             set(dbRef, value).then(() => {
@@ -66,11 +67,13 @@
             });
         };
 
+        // جلب واستماع البيانات من السحابة حياً وثباتها بعد الـ Refresh
         const dashboardRef = ref(db, 'dashboard/');
         onValue(dashboardRef, (snapshot) => {
             const data = snapshot.val();
             const dot = document.getElementById('cloudSyncDot');
             const txt = document.getElementById('cloudStatusText');
+            
             if (data) {
                 if (dot && txt) {
                     dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
@@ -301,8 +304,8 @@
                     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
                 </div>
                 <div class="flex items-baseline gap-2 mb-1">
-                    <span class="text-3xl font-black font-mono text-emerald-400" id="kpiPackedVal">3,302</span>
-                    <span class="text-xs font-bold text-emerald-500 font-mono" id="kpiPackedPct">(1.22%)</span>
+                    <span class="text-3xl font-black font-mono text-emerald-400" id="kpiPackedVal">0</span>
+                    <span class="text-xs font-bold text-emerald-500 font-mono" id="kpiPackedPct">(0.00%)</span>
                 </div>
                 <div class="text-xs text-slate-400" id="activeShiftAddedBadge">Active Shift: +0</div>
             </div>
@@ -312,8 +315,8 @@
                     <span class="text-xs font-bold uppercase tracking-wider">Remaining Balance</span>
                     <i data-lucide="package-search" class="w-5 h-5 text-amber-400"></i>
                 </div>
-                <div class="text-3xl font-black font-mono text-amber-400 mb-1" id="kpiRemainingVal">266,516</div>
-                <div class="text-xs text-amber-400 font-mono" id="kpiRemainingPct">98.78%</div>
+                <div class="text-3xl font-black font-mono text-amber-400 mb-1" id="kpiRemainingVal">269,818</div>
+                <div class="text-xs text-amber-400 font-mono" id="kpiRemainingPct">100%</div>
             </div>
 
             <div class="glass-card rounded-2xl p-5 border border-slate-700/60">
@@ -419,10 +422,10 @@
                             <td class="p-4 text-center font-mono text-base text-amber-400" id="footMorning">0</td>
                             <td class="p-4 text-center font-mono text-base text-indigo-400" id="footEvening">0</td>
                             <td class="p-4 text-center font-mono text-base text-rose-400" id="footDamaged">0</td>
-                            <td class="p-4 text-center font-mono text-base text-emerald-400" id="footPacked">3,302</td>
-                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footRemaining">266,516</td>
-                            <td class="p-4 text-center font-mono text-sm text-emerald-300" id="footPct">1.22%</td>
-                            <td class="p-4 text-center text-slate-400 text-xs font-sans">Live Verified</td>
+                            <td class="p-4 text-center font-mono text-base text-emerald-400" id="footPacked">0</td>
+                            <td class="p-4 text-center font-mono text-base text-amber-400" id="footRemaining">269,818</td>
+                            <td class="p-4 text-center font-mono text-sm text-emerald-300" id="footPct">0.00%</td>
+                            <td class="p-4 text-center text-slate-400 text-xs font-sans">Live Cloud Sync</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -477,7 +480,7 @@
 
     </main>
 
-    <!-- Full JavaScript Logic -->
+    <!-- Full JavaScript Logic with Cloud Persistence -->
     <script>
         let packingData = [
             { grade: 'Grade 01', dne: 10540, ad: 11200, ajyal1: 3100, ajyal2: 2400, morning: 0, evening: 0, damaged: 0 },
@@ -489,25 +492,22 @@
             { grade: 'Grade 07', dne: 9900,  ad: 10500, ajyal1: 2700, ajyal2: 2000, morning: 0, evening: 0, damaged: 0 },
             { grade: 'Grade 08', dne: 10400, ad: 11100, ajyal1: 2850, ajyal2: 2150, morning: 0, evening: 0, damaged: 0 },
             { grade: 'Grade 09', dne: 9800,  ad: 10400, ajyal1: 2650, ajyal2: 1950, morning: 0, evening: 0, damaged: 0 },
-            { grade: 'Grade 10', dne: 10150, ad: 10850, ajyal1: 2900, ajyal2: 2200, morning: 1500, evening: 1802, damaged: 0 },
+            { grade: 'Grade 10', dne: 10150, ad: 10850, ajyal1: 2900, ajyal2: 2200, morning: 0, evening: 0, damaged: 0 },
             { grade: 'Grade 11', dne: 9600,  ad: 10200, ajyal1: 2500, ajyal2: 1800, morning: 0, evening: 0, damaged: 0 },
             { grade: 'Grade 12', dne: 9400,  ad: 10000, ajyal1: 2400, ajyal2: 1700, morning: 0, evening: 0, damaged: 0 }
         ];
 
-        let historyLog = [
-            { date: '2026-11-10', shift: 'Morning Shift', grade: 'Grade 10', packed: 1500, damaged: 0, workforce: 45 },
-            { date: '2026-11-10', shift: 'Evening Shift', grade: 'Grade 10', packed: 1802, damaged: 0, workforce: 40 }
-        ];
+        let historyLog = [];
 
         let activeShift = 'morning';
         let sectorChartInstance = null;
         let statusDonutInstance = null;
+        let isCloudDataLoaded = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             initLocalStorage();
             setupQuickSelect();
-            renderAll();
             initCharts();
             setInterval(updateLiveClock, 1000);
             updateLiveClock();
@@ -519,10 +519,11 @@
             document.getElementById('quickLogDate').value = new Date().toISOString().split('T')[0];
         }
 
-        // دالة تحديث البيانات القادمة من سحابة Firebase تلقائياً
+        // استقبال البيانات من سحابة Firebase وتحديث الشاشة فوراً
         window.updateDataFromCloud = function(cloudData) {
-            if (Array.isArray(cloudData)) {
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
                 packingData = cloudData;
+                isCloudDataLoaded = true;
                 renderAll();
                 updateCharts();
             }
@@ -532,6 +533,7 @@
             if (Array.isArray(cloudHistory)) {
                 historyLog = cloudHistory;
                 renderHistoryTable();
+                updateKPIs();
             }
         };
 
@@ -633,7 +635,7 @@
         }
 
         function clearHistoryLog() {
-            if (confirm('Clear history log?')) {
+            if (confirm('Clear history log and reset all packed counts?')) {
                 historyLog = [];
                 packingData.forEach(d => { d.morning = 0; d.evening = 0; d.damaged = 0; });
                 persistState();
