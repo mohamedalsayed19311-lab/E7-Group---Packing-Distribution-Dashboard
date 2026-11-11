@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>E7 Packing - Field Mobile Terminal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        e7navy: '#0B132B',
+                        e7dark: '#1C2541',
+                        e7cyan: '#48CAE4',
+                        e7green: '#06D6A0',
+                        e7red: '#EF476F'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b132b">
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAA-j54dJzpth691_NRYT9Vn9mFcThDMWI",
+            authDomain: "packing-logistics-dashboard.firebaseapp.com",
+            databaseURL: "https://packing-logistics-dashboard-default-rtdb.firebaseio.com",
+            projectId: "packing-logistics-dashboard",
+            storageBucket: "packing-logistics-dashboard.firebasestorage.app",
+            messagingSenderId: "825185014596",
+            appId: "1:825185014596:web:39b99cdef4a567ca5abd11"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.saveCloudData = function(path, value) {
+            set(ref(db, 'dashboard/' + path), value);
+        };
+
+        onValue(ref(db, 'dashboard/'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.packingData && typeof window.updateDataFromCloud === 'function') {
+                    window.updateDataFromCloud(data.packingData);
+                }
+            }
+        });
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b132b; color: #f1f5f9; }
+        .glass-card { background: rgba(28, 37, 65, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    </style>
+</head>
+<body class="max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pb-20">
+
+    <!-- Mobile Header -->
+    <header class="glass-card rounded-2xl p-4 mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-white shadow">
+                E7
+            </div>
+            <div>
+                <h1 class="font-bold text-sm text-white">E7 Mobile Operations</h1>
+                <p class="text-[10px] text-cyan-400">Term 2 Field Terminal</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] text-emerald-300 font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Cloud Live</span>
+        </div>
+    </header>
+
+    <!-- Main Mobile Content Area -->
+    <main class="space-y-4 flex-1">
+        
+        <!-- Hardware & Printers Status Bar -->
+        <div class="grid grid-cols-2 gap-2">
+            <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+                <div>
+                    <div class="text-[9px] uppercase font-bold text-slate-400">Zebra ZT510 Printers</div>
+                    <div class="text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>4 / 4 Online</span>
+                    </div>
+                </div>
+                <i data-lucide="printer" class="w-5 h-5 text-slate-400"></i>
+            </div>
+
+            <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+                <div>
+                    <div class="text-[9px] uppercase font-bold text-slate-400">Honeywell Scanners</div>
+                    <div class="text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>12 Active</span>
+                    </div>
+                </div>
+                <i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i>
+            </div>
+        </div>
+
+        <!-- Shift Rate & Efficiency Card -->
+        <div class="glass-card rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-300">
+                <span class="flex items-center gap-1.5"><i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i> Live Production Rate</span>
+                <span id="activeShiftBadge" class="text-amber-400">Morning Shift</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-center">
+                    <div class="text-[10px] text-slate-400">Per Hour / Worker</div>
+                    <div class="text-sm font-black text-amber-400 font-mono mt-0.5" id="mobilePcsHour">0 Pcs</div>
+                </div>
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-center">
+                    <div class="text-[10px] text-slate-400">Per Minute Total</div>
+                    <div class="text-sm font-black text-cyan-400 font-mono mt-0.5" id="mobilePcsMinute">0 Pcs/Min</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Shift Entry Card -->
+        <div class="glass-card rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span>Quick Production Logger</span>
+                </span>
+            </div>
+
+            <div class="space-y-2">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Select Grade:</label>
+                    <select id="mobileGradeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-emerald-400 block mb-1">Packed Qty:</label>
+                        <input type="number" id="mobilePackedInput" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-emerald-400 font-mono font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-rose-400 block mb-1">Damaged:</label>
+                        <input type="number" id="mobileDamagedInput" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-rose-400 font-mono font-bold">
+                    </div>
+                </div>
+
+                <button onclick="submitMobileEntry()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition-all mt-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>Log & Sync to Cloud</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Live Progress Summary Card -->
+        <div class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+                <span>Grades Quick Overview</span>
+            </h3>
+            <div id="mobileGradesList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 text-xs font-mono">
+                <!-- Dynamic Grades List -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Mobile Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass-card border-t border-slate-800 p-2 flex justify-around items-center text-[10px]">
+        <button class="flex flex-col items-center text-cyan-400 gap-1 p-2">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span>Terminal</span>
+        </button>
+        <button onclick="alert('Printers: Zebra ZT510 Online (4 Units)\nScanners: Honeywell Active (12 Units)')" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-2">
+            <i data-lucide="printer" class="w-5 h-5"></i>
+            <span>Devices</span>
+        </button>
+        <button onclick="alert('E7 Logistics Term 2 Operations - Mobile Sync Active')" class="flex flex-col items-center text-slate-400 hover:text-white gap-1 p-2">
+            <i data-lucide="info" class="w-5 h-5"></i>
+            <span>Status</span>
+        </button>
+    </nav>
+
+    <script>
+        let packingData = [
+            { grade: 'Grade 01', dne: 10540, ad: 11200, ajyal1: 3100, ajyal2: 2400, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 02', dne: 10200, ad: 10900, ajyal1: 2900, ajyal2: 2200, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 03', dne: 10800, ad: 11500, ajyal1: 3200, ajyal2: 2500, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 04', dne: 10100, ad: 10700, ajyal1: 2800, ajyal2: 2100, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 05', dne: 10600, ad: 11300, ajyal1: 3000, ajyal2: 2300, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 06', dne: 10300, ad: 11000, ajyal1: 2950, ajyal2: 2250, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 07', dne: 9900,  ad: 10500, ajyal1: 2700, ajyal2: 2000, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 08', dne: 10400, ad: 11100, ajyal1: 2850, ajyal2: 2150, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 09', dne: 9800,  ad: 10400, ajyal1: 2650, ajyal2: 1950, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 10', dne: 10150, ad: 10850, ajyal1: 2900, ajyal2: 2200, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 11', dne: 9600,  ad: 10200, ajyal1: 2500, ajyal2: 1800, morning: 0, evening: 0, damaged: 0 },
+            { grade: 'Grade 12', dne: 9400,  ad: 10000, ajyal1: 2400, ajyal2: 1700, morning: 0, evening: 0, damaged: 0 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setupMobileSelect();
+            renderMobileList();
+        });
+
+        window.updateDataFromCloud = function(data) {
+            if (Array.isArray(data)) {
+                packingData = data;
+                renderMobileList();
+            }
+        };
+
+        function setupMobileSelect() {
+            const select = document.getElementById('mobileGradeSelect');
+            select.innerHTML = '';
+            packingData.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.grade;
+                opt.textContent = item.grade;
+                select.appendChild(opt);
+            });
+        }
+
+        function submitMobileEntry() {
+            const gradeName = document.getElementById('mobileGradeSelect').value;
+            const packed = parseInt(document.getElementById('mobilePackedInput').value) || 0;
+            const damaged = parseInt(document.getElementById('mobileDamagedInput').value) || 0;
+
+            if (packed <= 0 && damaged <= 0) {
+                alert('Please enter valid quantities.');
+                return;
+            }
+
+            const target = packingData.find(d => d.grade === gradeName);
+            if (target) {
+                target.morning += packed;
+                target.damaged += damaged;
+
+                if (typeof window.saveCloudData === 'function') {
+                    window.saveCloudData('packingData', packingData);
+                }
+
+                renderMobileList();
+                document.getElementById('mobilePackedInput').value = '';
+                document.getElementById('mobileDamagedInput').value = '';
+                alert('Successfully logged and synced to cloud!');
+            }
+        }
+
+        function renderMobileList() {
+            const container = document.getElementById('mobileGradesList');
+            container.innerHTML = '';
+            let totalPacked = 0;
+
+            packingData.forEach(row => {
+                const target = row.dne + row.ad + row.ajyal1 + row.ajyal2;
+                const packed = row.morning + row.evening;
+                totalPacked += packed;
+                const pct = target > 0 ? ((packed / target) * 100).toFixed(1) : '0.0';
+
+                const div = document.createElement('div');
+                div.className = 'bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between';
+                div.innerHTML = `
+                    <div>
+                        <span class="font-bold text-white font-sans">${row.grade}</span>
+                        <div class="text-[10px] text-slate-400">Target: ${target.toLocaleString()}</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-emerald-400 font-bold">${packed.toLocaleString()}</span>
+                        <div class="text-[10px] text-cyan-400 font-bold">${pct}%</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            const workforce = 45;
+            const rateHour = Math.round(totalPacked / (workforce * 12)) || 0;
+            const rateMinute = (totalPacked / (workforce * 12 * 60)).toFixed(1);
+
+            document.getElementById('mobilePcsHour').textContent = rateHour + ' Pcs/W/Hr';
+            document.getElementById('mobilePcsMinute').textContent = rateMinute + ' Pcs/Min';
+        }
+    </script>
+</body>
+</html>
