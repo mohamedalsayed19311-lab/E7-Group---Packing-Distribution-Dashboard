@@ -368,7 +368,8 @@
                     <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
                     <span>Quick Shift Production Entry (<span id="activeShiftLabelName" class="text-cyan-400 font-bold">Morning Shift</span>):</span>
                 </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto">
+                <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                    <input type="date" id="quickLogDate" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-cyan-500">
                     <select id="quickSelectGrade" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
                     </select>
                     <input type="number" id="quickPackedValue" placeholder="Add packed qty..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono font-bold w-32 focus:outline-none focus:border-cyan-500">
@@ -416,6 +417,39 @@
                             <td class="p-4 text-center text-slate-400 text-xs font-sans">Live Verified</td>
                         </tr>
                     </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <!-- Daily Shift Production History Log Section -->
+        <section class="glass-card rounded-2xl border border-slate-700/60 overflow-hidden p-5 space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
+                        <span>Daily Shift & Workforce Production History Log</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Tracking date, active shift, output quantity, and participating workforce count</p>
+                </div>
+                <button onclick="clearHistoryLog()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all">
+                    Clear History
+                </button>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 uppercase font-bold border-b border-slate-700/80">
+                        <tr>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Shift Type</th>
+                            <th class="p-3">Grade</th>
+                            <th class="p-3 text-center">Packed Qty</th>
+                            <th class="p-3 text-center">Workforce Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-800/60 font-mono">
+                        <!-- History injected dynamically -->
+                    </tbody>
                 </table>
             </div>
         </section>
@@ -472,7 +506,7 @@
     <!-- Application Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'e7-packing-dashboard';
@@ -489,510 +523,370 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
-
-        // Data Structure with distinct morning and evening packed quantities
+        // Complete Grade Data Structure (G01 - G12)
         window.packingData = [
             { id: "G01", name: "G01", dne: 9479, ad: 12212, ajyal1: 0, ajyal2: 0, morningPacked: 3302, eveningPacked: 0 },
             { id: "G02", name: "G02", dne: 9850, ad: 8544, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
             { id: "G03", name: "G03", dne: 9460, ad: 9214, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
             { id: "G04", name: "G04", dne: 8298, ad: 7535, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G05_GEN", name: "G05_GEN", dne: 11932, ad: 9237, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G05_ADV", name: "G05_ADV", dne: 1628, ad: 173, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G06_GEN", name: "G06_GEN", dne: 12545, ad: 9691, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G06_ADV", name: "G06_ADV", dne: 1356, ad: 256, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G07_GEN", name: "G07_GEN", dne: 13242, ad: 9411, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G07_ADV", name: "G07_ADV", dne: 1465, ad: 414, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G08_GEN", name: "G08_GEN", dne: 12100, ad: 8900, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G08_ADV", name: "G08_ADV", dne: 1500, ad: 350, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G09_GEN", name: "G09_GEN", dne: 11400, ad: 8200, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G09_ADV", name: "G09_ADV", dne: 1600, ad: 400, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G10_GEN", name: "G10_GEN", dne: 10500, ad: 7500, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G10_ADV", name: "G10_ADV", dne: 1700, ad: 450, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G11_GEN", name: "G11_GEN", dne: 9800, ad: 6900, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G11_ADV", name: "G11_ADV", dne: 1800, ad: 500, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G12_GEN", name: "G12_GEN", dne: 9200, ad: 6400, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
-            { id: "G12_ADV", name: "G12_ADV", dne: 1900, ad: 550, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 }
+            { id: "G05_GEN", name: "G05 (General)", dne: 11932, ad: 9237, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G05_ADV", name: "G05 (Advanced)", dne: 1628, ad: 173, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G06_GEN", name: "G06 (General)", dne: 12545, ad: 9691, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G06_ADV", name: "G06 (Advanced)", dne: 1782, ad: 191, ajyal1: 0, ajyal2: 0, morningPacked: 0, eveningPacked: 0 },
+            { id: "G07", name: "G07", dne: 11520, ad: 10450, ajyal1: 2500, ajyal2: 1200, morningPacked: 0, eveningPacked: 0 },
+            { id: "G08", name: "G08", dne: 11200, ad: 10100, ajyal1: 2300, ajyal2: 1100, morningPacked: 0, eveningPacked: 0 },
+            { id: "G09", name: "G09", dne: 10800, ad: 9800, ajyal1: 2100, ajyal2: 1000, morningPacked: 0, eveningPacked: 0 },
+            { id: "G10", name: "G10", dne: 10400, ad: 9400, ajyal1: 2000, ajyal2: 950, morningPacked: 0, eveningPacked: 0 },
+            { id: "G11", name: "G11", dne: 9900, ad: 8900, ajyal1: 1800, ajyal2: 900, morningPacked: 0, eveningPacked: 0 },
+            { id: "G12", name: "G12", dne: 9500, ad: 8500, ajyal1: 1700, ajyal2: 850, morningPacked: 0, eveningPacked: 0 }
         ];
 
-        const TARGET_END_DATE = new Date("2026-12-06T23:59:59").getTime();
-
-        let currentShift = 'morning';
-        let morningStaffCount = 45;
-        let eveningStaffCount = 40;
-        let selectedRowId = null;
+        window.historyLog = [];
+        window.currentShift = 'morning';
+        window.activeEditingId = null;
         let sectorChartInstance = null;
         let donutChartInstance = null;
 
-        async function syncToCloud() {
-            if (!currentUser || !db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
-                await setDoc(docRef, {
-                    packingData: window.packingData,
-                    morningStaff: morningStaffCount,
-                    eveningStaff: eveningStaffCount,
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
-            } catch (err) {
-                console.error("Cloud Sync Save Error:", err);
-            }
-        }
+        // Set default date input to today
+        document.getElementById('quickLogDate').valueAsDate = new Date();
 
-        async function initCloudSync() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+        // Initialize Authentication & Firestore Sync
+        signInAnonymously(auth).then(() => {
+            document.getElementById('cloudStatusText').innerText = "Cloud Sync Active";
+            const docRef = doc(db, "artifacts", appId, "public", "packingDataStateV2");
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    if (cloudData.grades) window.packingData = cloudData.grades;
+                    if (cloudData.history) window.historyLog = cloudData.history;
+                    renderDashboard();
                 } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                console.warn("Auth Fallback:", e);
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                if (user) {
-                    const statusText = document.getElementById('cloudStatusText');
-                    const statusDot = document.getElementById('cloudSyncDot');
-                    if (statusText) statusText.textContent = "Cloud Live";
-                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'packingState', 'main');
-                    onSnapshot(docRef, (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            if (data.packingData && Array.isArray(data.packingData)) {
-                                window.packingData = data.packingData;
-                            }
-                            if (data.morningStaff) {
-                                morningStaffCount = data.morningStaff;
-                                document.getElementById('morningStaffInput').value = morningStaffCount;
-                            }
-                            if (data.eveningStaff) {
-                                eveningStaffCount = data.eveningStaff;
-                                document.getElementById('eveningStaffInput').value = eveningStaffCount;
-                            }
-                            window.renderTable();
-                            window.updateExecutiveKPIs();
-                            window.updateCharts();
-                        } else {
-                            syncToCloud();
-                        }
-                    }, (error) => {
-                        console.error("Snapshot error:", error);
-                    });
+                    syncToCloud();
                 }
             });
-        }
+        }).catch(err => {
+            console.error("Auth error:", err);
+            document.getElementById('cloudStatusText').innerText = "Offline Mode";
+        });
 
-        function countSundays(startDate, endDate) {
-            let sundays = 0;
-            let cur = new Date(startDate.getTime());
-            while (cur <= endDate) {
-                if (cur.getDay() === 0) sundays++;
-                cur.setDate(cur.getDate() + 1);
-            }
-            return sundays;
+        window.syncToCloud = function() {
+            const docRef = doc(db, "artifacts", appId, "public", "packingDataStateV2");
+            setDoc(docRef, { 
+                grades: window.packingData, 
+                history: window.historyLog, 
+                updatedAt: new Date().toISOString() 
+            }).catch(err => console.error("Sync error:", err));
         }
 
         window.setShift = function(shift) {
-            currentShift = shift;
-            const morningBtn = document.getElementById('btnMorningShift');
-            const eveningBtn = document.getElementById('btnEveningShift');
-            const badge = document.getElementById('activeShiftBadge');
-            const activeLabel = document.getElementById('activeShiftLabelName');
-
+            window.currentShift = shift;
             if (shift === 'morning') {
-                morningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300";
-                eveningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
-                badge.textContent = "Morning Shift (07:00 - 19:00)";
-                if(activeLabel) activeLabel.textContent = "Morning Shift (07:00 - 19:00)";
+                document.getElementById('btnMorningShift').className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-amber-500/50 bg-amber-500/20 text-amber-300";
+                document.getElementById('btnEveningShift').className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
+                document.getElementById('activeShiftBadge').innerText = "Morning Shift (07:00 - 19:00)";
+                document.getElementById('activeShiftLabelName').innerText = "Morning Shift";
             } else {
-                eveningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-indigo-500/50 bg-indigo-500/20 text-indigo-300";
-                morningBtn.className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
-                badge.textContent = "Evening Shift (19:00 - 07:00)";
-                if(activeLabel) activeLabel.textContent = "Evening Shift (19:00 - 07:00)";
+                document.getElementById('btnEveningShift').className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-indigo-500/50 bg-indigo-500/20 text-indigo-300";
+                document.getElementById('btnMorningShift').className = "px-2.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700";
+                document.getElementById('activeShiftBadge').innerText = "Evening Shift (19:00 - 07:00)";
+                document.getElementById('activeShiftLabelName').innerText = "Evening Shift";
             }
-        };
-
-        window.updateShiftWorkforce = function() {
-            const mVal = parseInt(document.getElementById('morningStaffInput').value);
-            const eVal = parseInt(document.getElementById('eveningStaffInput').value);
-            if (!isNaN(mVal) && mVal > 0) morningStaffCount = mVal;
-            if (!isNaN(eVal) && eVal > 0) eveningStaffCount = eVal;
-            syncToCloud();
-        };
-
-        window.submitQuickEntry = function() {
-            const gradeId = document.getElementById('quickSelectGrade').value;
-            const inputVal = parseInt(document.getElementById('quickPackedValue').value);
-            if (!isNaN(inputVal) && inputVal > 0 && gradeId) {
-                const row = window.packingData.find(r => r.id === gradeId);
-                if (row) {
-                    if (currentShift === 'morning') {
-                        row.morningPacked += inputVal;
-                    } else {
-                        row.eveningPacked += inputVal;
-                    }
-                    document.getElementById('quickPackedValue').value = '';
-                    window.renderTable();
-                    window.updateExecutiveKPIs();
-                    window.updateCharts();
-                    syncToCloud();
-                }
-            }
-        };
-
-        function startLiveClockAndCountdown() {
-            function update() {
-                const now = new Date();
-                const hoursStr = String(now.getHours()).padStart(2, '0');
-                const minsStr = String(now.getMinutes()).padStart(2, '0');
-                const secsStr = String(now.getSeconds()).padStart(2, '0');
-                
-                const timeEl = document.getElementById('liveTimeText');
-                const dateEl = document.getElementById('liveDateText');
-                if (timeEl) timeEl.textContent = `${hoursStr}:${minsStr}:${secsStr}`;
-
-                const dayStr = String(now.getDate()).padStart(2, '0');
-                const monthStr = String(now.getMonth() + 1).padStart(2, '0');
-                const yearStr = now.getFullYear();
-                if (dateEl) dateEl.textContent = `${dayStr}/${monthStr}/${yearStr}`;
-
-                const currentHour = now.getHours();
-                // Auto shift switch: Morning 07:00 to 19:00, Evening 19:00 to 07:00
-                if (currentHour >= 7 && currentHour < 19) {
-                    if (currentShift !== 'morning') window.setShift('morning');
-                } else {
-                    if (currentShift !== 'evening') window.setShift('evening');
-                }
-
-                const isSunday = now.getDay() === 0;
-                const sundayBadge = document.getElementById('sundayIndicator');
-                const countdownBanner = document.getElementById('countdownBanner');
-
-                if (isSunday && sundayBadge && countdownBanner) {
-                    sundayBadge.classList.remove('hidden');
-                    countdownBanner.classList.add('border-amber-500/50', 'bg-amber-950/20');
-                } else if (sundayBadge && countdownBanner) {
-                    sundayBadge.classList.add('hidden');
-                    countdownBanner.classList.remove('border-amber-500/50', 'bg-amber-950/20');
-                }
-
-                const targetDate = new Date(TARGET_END_DATE);
-                const diffTime = TARGET_END_DATE - now.getTime();
-
-                if (diffTime > 0) {
-                    const totalDaysExact = diffTime / (1000 * 60 * 60 * 24);
-                    const sundaysCount = countSundays(now, targetDate);
-                    const netWorkDays = Math.max(0, totalDaysExact - sundaysCount);
-                    
-                    const daysCountEl = document.getElementById('fractionalDaysCount');
-                    if (daysCountEl) daysCountEl.textContent = netWorkDays.toFixed(2);
-
-                    const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
-
-                    const hEl = document.getElementById('hoursCount');
-                    const mEl = document.getElementById('minutesCount');
-                    const sEl = document.getElementById('secondsCount');
-                    if (hEl) hEl.textContent = String(hours).padStart(2, '0');
-                    if (mEl) mEl.textContent = String(minutes).padStart(2, '0');
-                    if (sEl) sEl.textContent = String(seconds).padStart(2, '0');
-                }
-                window.updateExecutiveKPIs();
-            }
-            update();
-            setInterval(update, 1000);
         }
 
-        window.updateExecutiveKPIs = function() {
-            let totalTarget = 0;
-            let totalMorning = 0;
-            let totalEvening = 0;
-
-            window.packingData.forEach(row => {
-                const target = row.dne + row.ad + row.ajyal1 + row.ajyal2;
-                totalTarget += target;
-                totalMorning += row.morningPacked;
-                totalEvening += row.eveningPacked;
-            });
-
-            const totalPacked = totalMorning + totalEvening;
-            const remainingBalance = totalTarget - totalPacked;
-            const packedPct = ((totalPacked / totalTarget) * 100).toFixed(2);
-            const remainingPct = (100 - packedPct).toFixed(2);
-
-            const setVal = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
-            
-            setVal('kpiTotalTargetVal', totalTarget.toLocaleString());
-            setVal('kpiPackedVal', totalPacked.toLocaleString());
-            setVal('kpiPackedPct', `(${packedPct}%)`);
-            setVal('kpiRemainingVal', remainingBalance.toLocaleString());
-            setVal('kpiRemainingPct', `${remainingPct}%`);
-            
-            setVal('morningShiftTotalDisplay', totalMorning.toLocaleString());
-            setVal('eveningShiftTotalDisplay', totalEvening.toLocaleString());
-
-            const activeShiftAdded = currentShift === 'morning' ? totalMorning : totalEvening;
-            setVal('activeShiftAddedBadge', `${currentShift === 'morning' ? 'Morning' : 'Evening'}: +${activeShiftAdded.toLocaleString()}`);
-
-            const packedBar = document.getElementById('packedProgressBar');
-            if (packedBar) packedBar.style.width = `${packedPct}%`;
-            const remBar = document.getElementById('remainingProgressBar');
-            if (remBar) remBar.style.width = `${remainingPct}%`;
-
-            setVal('footMorning', totalMorning.toLocaleString());
-            setVal('footEvening', totalEvening.toLocaleString());
-            setVal('footPacked', totalPacked.toLocaleString());
-            setVal('footRemaining', remainingBalance.toLocaleString());
-            setVal('footPct', `${packedPct}%`);
-        };
-
-        window.renderTable = function() {
+        window.renderDashboard = function() {
             const tbody = document.getElementById('packingTableBody');
             const quickSelect = document.getElementById('quickSelectGrade');
-            if (!tbody) return;
+            const historyBody = document.getElementById('historyTableBody');
+            
             tbody.innerHTML = '';
+            quickSelect.innerHTML = '';
+            historyBody.innerHTML = '';
 
-            if (quickSelect && quickSelect.options.length === 0) {
-                window.packingData.forEach(row => {
-                    const opt = document.createElement('option');
-                    opt.value = row.id;
-                    opt.textContent = row.name;
-                    quickSelect.appendChild(opt);
-                });
-            }
+            let totalDNE = 0, totalAD = 0, totalAjyal1 = 0, totalAjyal2 = 0;
+            let totalMorning = 0, totalEvening = 0, totalPackedAll = 0, grandTotalTarget = 0;
 
-            let sumDNE = 0, sumAD = 0, sumAjyal1 = 0, sumAjyal2 = 0;
+            window.packingData.forEach(item => {
+                const target = item.dne + item.ad + item.ajyal1 + item.ajyal2;
+                const packed = item.morningPacked + item.eveningPacked;
+                const remaining = Math.max(0, target - packed);
+                const pct = target > 0 ? ((packed / target) * 100).toFixed(2) : "0.00";
 
-            window.packingData.forEach(row => {
-                const totalTarget = row.dne + row.ad + row.ajyal1 + row.ajyal2;
-                const totalPackedRow = row.morningPacked + row.eveningPacked;
-                const remaining = totalTarget - totalPackedRow;
-                const pct = ((totalPackedRow / totalTarget) * 100).toFixed(1);
+                totalDNE += item.dne;
+                totalAD += item.ad;
+                totalAjyal1 += item.ajyal1;
+                totalAjyal2 += item.ajyal2;
+                totalMorning += item.morningPacked;
+                totalEvening += item.eveningPacked;
+                totalPackedAll += packed;
+                grandTotalTarget += target;
 
-                sumDNE += row.dne;
-                sumAD += row.ad;
-                sumAjyal1 += row.ajyal1;
-                sumAjyal2 += row.ajyal2;
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.innerText = `${item.name} (Rem: ${remaining})`;
+                quickSelect.appendChild(opt);
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-800/50 transition-colors border-b border-slate-800/40";
-                tr.dataset.grade = row.name;
-
+                tr.className = "hover:bg-slate-800/40 transition-colors";
                 tr.innerHTML = `
-                    <td class="p-3.5 font-bold font-sans text-slate-200 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full ${totalPackedRow > 0 ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
-                        ${row.name}
-                    </td>
-                    <td class="p-3.5 text-center text-slate-300">${row.dne.toLocaleString()}</td>
-                    <td class="p-3.5 text-center text-slate-300">${row.ad.toLocaleString()}</td>
-                    <td class="p-3.5 text-center text-slate-300">${row.ajyal1.toLocaleString()}</td>
-                    <td class="p-3.5 text-center text-slate-300">${row.ajyal2.toLocaleString()}</td>
-                    <td class="p-3.5 text-center font-bold text-cyan-300">${totalTarget.toLocaleString()}</td>
-                    <td class="p-3.5 text-center font-bold text-amber-300">${row.morningPacked.toLocaleString()}</td>
-                    <td class="p-3.5 text-center font-bold text-indigo-300">${row.eveningPacked.toLocaleString()}</td>
-                    <td class="p-3.5 text-center font-bold text-emerald-400">${totalPackedRow.toLocaleString()}</td>
-                    <td class="p-3.5 text-center font-bold text-amber-400">${remaining.toLocaleString()}</td>
+                    <td class="p-3.5 font-bold text-white font-sans">${item.name}</td>
+                    <td class="p-3.5 text-center text-slate-300">${item.dne.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${item.ad.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${item.ajyal1.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-slate-300">${item.ajyal2.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-cyan-300">${target.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-amber-400">${item.morningPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-indigo-400">${item.eveningPacked.toLocaleString()}</td>
+                    <td class="p-3.5 text-center font-bold text-emerald-400">${packed.toLocaleString()}</td>
+                    <td class="p-3.5 text-center text-amber-400 font-semibold">${remaining.toLocaleString()}</td>
                     <td class="p-3.5 text-center">
-                        <span class="text-xs font-bold ${pct > 0 ? 'text-emerald-400' : 'text-slate-500'}">${pct}%</span>
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span class="text-xs text-emerald-300">${pct}%</span>
+                        </div>
                     </td>
                     <td class="p-3.5 text-center">
-                        <button onclick="openModal('${row.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-cyan-600 hover:text-white text-cyan-400 border border-slate-700 rounded-lg text-xs transition-all flex items-center justify-center gap-1 mx-auto">
-                            <i data-lucide="edit" class="w-3 h-3"></i>
-                            <span class="hidden sm:inline font-sans">Edit</span>
+                        <button onclick="openModal('${item.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-cyan-600 text-slate-200 hover:text-white rounded-lg text-xs font-sans transition-all flex items-center gap-1 mx-auto">
+                            <i data-lucide="edit" class="w-3 h-3"></i> Edit
                         </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            const setVal = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
-            setVal('footDNE', sumDNE.toLocaleString());
-            setVal('footAD', sumAD.toLocaleString());
-            setVal('footAjyal1', sumAjyal1.toLocaleString());
-            setVal('footAjyal2', sumAjyal2.toLocaleString());
+            // Render History Log
+            if (window.historyLog.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No shift production entries recorded yet.</td></tr>`;
+            } else {
+                window.historyLog.slice().reverse().forEach(log => {
+                    const htr = document.createElement('tr');
+                    htr.className = "hover:bg-slate-800/40 transition-colors";
+                    const shiftBadge = log.shift === 'morning' 
+                        ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">Morning Shift</span>' 
+                        : '<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">Evening Shift</span>';
+                    
+                    htr.innerHTML = `
+                        <td class="p-3 text-slate-300">${log.date}</td>
+                        <td class="p-3">${shiftBadge}</td>
+                        <td class="p-3 font-bold text-white font-sans">${log.gradeName}</td>
+                        <td class="p-3 text-center font-bold text-emerald-400">+${log.qty.toLocaleString()}</td>
+                        <td class="p-3 text-center font-bold text-cyan-300">${log.workforceCount} Workers</td>
+                    `;
+                    historyBody.appendChild(htr);
+                });
+            }
 
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        };
+            // Footer totals
+            document.getElementById('footDNE').innerText = totalDNE.toLocaleString();
+            document.getElementById('footAD').innerText = totalAD.toLocaleString();
+            document.getElementById('footAjyal1').innerText = totalAjyal1.toLocaleString();
+            document.getElementById('footAjyal2').innerText = totalAjyal2.toLocaleString();
+            document.getElementById('footTotal').innerText = grandTotalTarget.toLocaleString();
+            document.getElementById('footMorning').innerText = totalMorning.toLocaleString();
+            document.getElementById('footEvening').innerText = totalEvening.toLocaleString();
+            document.getElementById('footPacked').innerText = totalPackedAll.toLocaleString();
+            document.getElementById('footRemaining').innerText = (grandTotalTarget - totalPackedAll).toLocaleString();
+            
+            const overallPct = grandTotalTarget > 0 ? ((totalPackedAll / grandTotalTarget) * 100).toFixed(2) : "0.00";
+            document.getElementById('footPct').innerText = overallPct + "%";
+
+            document.getElementById('kpiTotalTargetVal').innerText = grandTotalTarget.toLocaleString();
+            document.getElementById('kpiPackedVal').innerText = totalPackedAll.toLocaleString();
+            document.getElementById('kpiPackedPct').innerText = `(${overallPct}%)`;
+            document.getElementById('packedProgressBar').style.width = overallPct + "%";
+
+            const remVal = grandTotalTarget - totalPackedAll;
+            const remPct = (100 - overallPct).toFixed(2);
+            document.getElementById('kpiRemainingVal').innerText = remVal.toLocaleString();
+            document.getElementById('kpiRemainingPct').innerText = remPct + "%";
+            document.getElementById('remainingProgressBar').style.width = remPct + "%";
+
+            document.getElementById('morningShiftTotalDisplay').innerText = totalMorning.toLocaleString();
+            document.getElementById('eveningShiftTotalDisplay').innerText = totalEvening.toLocaleString();
+
+            lucide.createIcons();
+            updateCharts(totalDNE, totalAD, totalAjyal1, totalAjyal2, totalPackedAll, remVal);
+        }
+
+        window.submitQuickEntry = function() {
+            const dateVal = document.getElementById('quickLogDate').value || new Date().toISOString().split('T')[0];
+            const gradeId = document.getElementById('quickSelectGrade').value;
+            const val = parseInt(document.getElementById('quickPackedValue').value) || 0;
+            if (val <= 0) return;
+
+            const item = window.packingData.find(g => g.id === gradeId);
+            if (item) {
+                const workforce = window.currentShift === 'morning' 
+                    ? parseInt(document.getElementById('morningStaffInput').value) || 0 
+                    : parseInt(document.getElementById('eveningStaffInput').value) || 0;
+
+                if (window.currentShift === 'morning') {
+                    item.morningPacked += val;
+                } else {
+                    item.eveningPacked += val;
+                }
+
+                // Add to history log
+                window.historyLog.push({
+                    date: dateVal,
+                    shift: window.currentShift,
+                    gradeId: item.id,
+                    gradeName: item.name,
+                    qty: val,
+                    workforceCount: workforce
+                });
+
+                syncToCloud();
+                renderDashboard();
+                document.getElementById('quickPackedValue').value = '';
+            }
+        }
+
+        window.clearHistoryLog = function() {
+            if (confirm("Are you sure you want to clear the shift history log?")) {
+                window.historyLog = [];
+                syncToCloud();
+                renderDashboard();
+            }
+        }
+
+        window.openModal = function(id) {
+            window.activeEditingId = id;
+            const item = window.packingData.find(g => g.id === id);
+            if (item) {
+                document.getElementById('modalGradeName').innerText = item.name;
+                document.getElementById('modalMorningInput').value = item.morningPacked;
+                document.getElementById('modalEveningInput').value = item.eveningPacked;
+                document.getElementById('updateModal').classList.remove('hidden');
+            }
+        }
+
+        window.closeModal = function() {
+            document.getElementById('updateModal').classList.add('hidden');
+            window.activeEditingId = null;
+        }
+
+        window.saveModalUpdate = function() {
+            if (!window.activeEditingId) return;
+            const item = window.packingData.find(g => g.id === window.activeEditingId);
+            if (item) {
+                item.morningPacked = parseInt(document.getElementById('modalMorningInput').value) || 0;
+                item.eveningPacked = parseInt(document.getElementById('modalEveningInput').value) || 0;
+                syncToCloud();
+                renderDashboard();
+            }
+            closeModal();
+        }
 
         window.filterTable = function() {
-            const query = document.getElementById('tableSearch').value.toUpperCase();
+            const query = document.getElementById('tableSearch').value.toLowerCase();
             const rows = document.querySelectorAll('#packingTableBody tr');
             rows.forEach(row => {
-                const gradeName = row.dataset.grade.toUpperCase();
-                row.style.display = gradeName.includes(query) ? '' : 'none';
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
             });
-        };
+        }
 
-        function initCharts() {
-            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
-            let sumDNE = window.packingData.reduce((acc, r) => acc + r.dne, 0);
-            let sumAD = window.packingData.reduce((acc, r) => acc + r.ad, 0);
-            let sumAjyal1 = window.packingData.reduce((acc, r) => acc + r.ajyal1, 0);
-            let sumAjyal2 = window.packingData.reduce((acc, r) => acc + r.ajyal2, 0);
+        window.exportData = function() {
+            let csv = "Grade,MOE-DNE,MOE-AD,Ajyal-1,Ajyal-2,Total Target,Morning Packed,Evening Packed,Total Packed,Remaining,Progress %\n";
+            window.packingData.forEach(item => {
+                const target = item.dne + item.ad + item.ajyal1 + item.ajyal2;
+                const packed = item.morningPacked + item.eveningPacked;
+                const rem = target - packed;
+                const pct = target > 0 ? ((packed / target) * 100).toFixed(2) : "0.00";
+                csv += `"${item.name}",${item.dne},${item.ad},${item.ajyal1},${item.ajyal2},${target},${item.morningPacked},${item.eveningPacked},${packed},${rem},${pct}%\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'e7_packing_dashboard_term2.csv');
+            a.click();
+        }
 
-            sectorChartInstance = new Chart(sectorCtx, {
+        window.copyShareableLink = function() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Dashboard link copied to clipboard!");
+        }
+
+        function updateCharts(dne, ad, aj1, aj2, packed, remaining) {
+            const ctxBar = document.getElementById('sectorChart').getContext('2d');
+            if (sectorChartInstance) sectorChartInstance.destroy();
+            sectorChartInstance = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
                     labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
-                    datasets: [
-                        {
-                            label: 'Total Target',
-                            data: [sumDNE, sumAD, sumAjyal1, sumAjyal2],
-                            backgroundColor: 'rgba(56, 189, 248, 0.4)',
-                            borderColor: '#38bdf8',
-                            borderWidth: 1.5,
-                            borderRadius: 8
-                        },
-                        {
-                            label: 'Packed Completed',
-                            data: [3302, 0, 0, 0],
-                            backgroundColor: 'rgba(52, 211, 153, 0.8)',
-                            borderColor: '#34d399',
-                            borderWidth: 1.5,
-                            borderRadius: 8
-                        }
-                    ]
+                    datasets: [{
+                        label: 'Total Targeted',
+                        data: [dne, ad, aj1, aj2],
+                        backgroundColor: '#48CAE4',
+                        borderRadius: 8
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
 
-            const donutCtx = document.getElementById('statusDonutChart').getContext('2d');
-            donutChartInstance = new Chart(donutCtx, {
+            const ctxDonut = document.getElementById('statusDonutChart').getContext('2d');
+            if (donutChartInstance) donutChartInstance.destroy();
+            donutChartInstance = new Chart(ctxDonup = ctxDonut, {
                 type: 'doughnut',
                 data: {
-                    labels: ['MOE-DNE', 'MOE-AD', 'Ajyal-1', 'Ajyal-2'],
+                    labels: ['Total Packed', 'Remaining Balance'],
                     datasets: [{
-                        data: [sumDNE, sumAD, sumAjyal1, sumAjyal2],
-                        backgroundColor: ['#38bdf8', '#818cf8', '#fbbf24', '#f43f5e'],
+                        data: [packed, remaining],
+                        backgroundColor: ['#06D6A0', '#FFB703'],
                         borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } },
-                    cutout: '70%'
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } }
+                    }
                 }
             });
         }
 
-        window.updateCharts = function() {
-            if (sectorChartInstance) {
-                let packedSum = window.packingData.reduce((acc, r) => acc + r.morningPacked + r.eveningPacked, 0);
-                sectorChartInstance.data.datasets[1].data[0] = packedSum;
-                sectorChartInstance.update();
+        function updateClockAndCountdown() {
+            const now = new Date();
+            document.getElementById('liveTimeText').innerText = now.toLocaleTimeString();
+            document.getElementById('liveDateText').innerText = now.toLocaleDateString();
+
+            const isSunday = now.getDay() === 0;
+            const sundayInd = document.getElementById('sundayIndicator');
+            if (isSunday) {
+                sundayInd.classList.remove('hidden');
+            } else {
+                sundayInd.classList.add('hidden');
             }
-        };
 
-        window.openModal = function(id) {
-            selectedRowId = id;
-            const row = window.packingData.find(r => r.id === id);
-            if (row) {
-                document.getElementById('modalGradeName').textContent = row.name;
-                document.getElementById('modalMorningInput').value = row.morningPacked;
-                document.getElementById('modalEveningInput').value = row.eveningPacked;
-                document.getElementById('updateModal').classList.remove('hidden');
+            const target = new Date('2026-12-06T00:00:00');
+            const diff = target - now;
+            if (diff > 0) {
+                const totalSecs = Math.floor(diff / 1000);
+                const days = totalSecs / 86400;
+                document.getElementById('fractionalDaysCount').innerText = days.toFixed(2);
+
+                const remSecs = totalSecs % 86400;
+                const hrs = Math.floor(remSecs / 3600);
+                const mins = Math.floor((remSecs % 3600) / 60);
+                const secs = remSecs % 60;
+
+                document.getElementById('hoursCount').innerText = String(hrs).padStart(2, '0');
+                document.getElementById('minutesCount').innerText = String(mins).padStart(2, '0');
+                document.getElementById('secondsCount').innerText = String(secs).padStart(2, '0');
             }
-        };
+        }
 
-        window.closeModal = function() {
-            document.getElementById('updateModal').classList.add('hidden');
-            selectedRowId = null;
-        };
-
-        window.saveModalUpdate = function() {
-            const mVal = parseInt(document.getElementById('modalMorningInput').value);
-            const eVal = parseInt(document.getElementById('modalEveningInput').value);
-            if (!isNaN(mVal) && !isNaN(eVal) && selectedRowId) {
-                const row = window.packingData.find(r => r.id === selectedRowId);
-                if (row) {
-                    row.morningPacked = mVal;
-                    row.eveningPacked = eVal;
-                    window.renderTable();
-                    window.updateExecutiveKPIs();
-                    window.updateCharts();
-                    syncToCloud();
-                    window.closeModal();
-                }
-            }
-        };
-
-        window.exportData = function() {
-            let csvContent = "data:text/csv;charset=utf-8,Grade,DNE,AD,Ajyal1,Ajyal2,MorningPacked,EveningPacked\n";
-            window.packingData.forEach(row => {
-                csvContent += `${row.name},${row.dne},${row.ad},${row.ajyal1},${row.ajyal2},${row.morningPacked},${row.eveningPacked}\n`;
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `E7_Packing_Plan_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-        window.copyShareableLink = function() {
-            let shareUrl = window.location.href;
-            if (shareUrl.includes('blob:') || shareUrl.includes('about:blank')) {
-                try {
-                    shareUrl = window.parent.location.href;
-                } catch (e) {
-                    shareUrl = window.location.origin + window.location.pathname;
-                }
-            }
-            
-            const existingModal = document.getElementById('shareModalBox');
-            if (existingModal) existingModal.remove();
-
-            const modalHtml = `
-                <div id="shareModalBox" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div class="glass-card rounded-2xl max-w-lg w-full border border-cyan-500/40 p-6 space-y-4 shadow-2xl">
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                            <h3 class="font-bold text-base text-white flex items-center gap-2">
-                                <i data-lucide="share-2" class="w-5 h-5 text-cyan-400"></i>
-                                <span>Share Dashboard Link with Colleagues</span>
-                            </h3>
-                            <button onclick="document.getElementById('shareModalBox').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-                        </div>
-                        <p class="text-xs text-slate-300">
-                            Copy this link and send it via WhatsApp or Email. Because this app uses <strong>Real-Time Cloud Sync</strong>, any updates made by your colleagues will instantly appear on your dashboard!
-                        </p>
-                        <div class="flex items-center gap-2">
-                            <input type="text" readonly value="${shareUrl}" id="shareUrlInputBox" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono focus:outline-none">
-                            <button onclick="const inp = document.getElementById('shareUrlInputBox'); inp.select(); document.execCommand('copy'); alert('Link copied successfully!');" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shrink-0">
-                                Copy Link
-                            </button>
-                        </div>
-                        <div class="flex justify-end pt-2">
-                            <button onclick="document.getElementById('shareModalBox').remove()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300">Close</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        };
-
-        window.onload = function() {
-            window.renderTable();
-            initCharts();
-            startLiveClockAndCountdown();
-            initCloudSync();
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        };
+        setInterval(updateClockAndCountdown, 1000);
+        renderDashboard();
     </script>
 </body>
 </html>
